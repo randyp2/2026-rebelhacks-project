@@ -1,77 +1,109 @@
-// TODO: Implement typed Supabase query helpers
-//
-// All functions accept an authenticated Supabase client (server-side) and
-// return strongly-typed rows from the Database type.
-//
-// Functions to implement:
-//
-//   getRoomRisks(client)
-//     → fetch all room_risk rows ordered by risk_score DESC
-//
-//   getRecentAlerts(client, limit = 50)
-//     → fetch the most recent `limit` alerts ordered by timestamp DESC
-//
-//   getHotelEvents(client, roomId: string, windowMinutes = 60)
-//     → fetch hotel_events for a room within the last N minutes
-//
-//   getCvEvents(client, roomId: string, windowMinutes = 60)
-//     → fetch cv_events for a room within the last N minutes
-//
-//   getPersonHistory(client, personId: string)
-//     → fetch person_room_history joined with room_risk for a given person
-//
-//   getRoomEventSummary(client, roomId: string)
-//     → aggregate counts per event_type for a room in the last 24h
-//
-// Example usage (server component):
-//   const supabase = await createServerSupabaseClient()
-//   const rooms = await getRoomRisks(supabase)
+/**
+ * queries.ts
+ * Typed Supabase query helpers used by server components and API routes.
+ * All functions accept an authenticated Supabase client and throw on error.
+ */
 
 import type { SupabaseClient } from "@supabase/supabase-js"
-import type { Database } from "@/types/database"
+import type {
+  Database,
+  RoomRiskRow,
+  AlertRow,
+  HotelEventRow,
+  CvEventRow,
+  PersonRoomHistoryRow,
+} from "@/types/database"
 
 export type TypedClient = SupabaseClient<Database>
 
-// TODO: implement getRoomRisks
-export async function getRoomRisks(_client: TypedClient) {
-  // TODO
-  return []
+/** All rooms ordered by risk score descending. */
+export async function getRoomRisks(client: TypedClient): Promise<RoomRiskRow[]> {
+  const { data, error } = await client
+    .from("room_risk")
+    .select("*")
+    .order("risk_score", { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
 
-// TODO: implement getRecentAlerts
-export async function getRecentAlerts(_client: TypedClient, _limit = 50) {
-  // TODO
-  return []
+/** Most recent alerts, newest first. */
+export async function getRecentAlerts(
+  client: TypedClient,
+  limit = 50
+): Promise<AlertRow[]> {
+  const { data, error } = await client
+    .from("alerts")
+    .select("*")
+    .order("timestamp", { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data ?? []
 }
 
-// TODO: implement getHotelEvents
+/** Hotel events for a room within the last N minutes, newest first. */
 export async function getHotelEvents(
-  _client: TypedClient,
-  _roomId: string,
-  _windowMinutes = 60
-) {
-  // TODO
-  return []
+  client: TypedClient,
+  roomId: string,
+  windowMinutes = 60
+): Promise<HotelEventRow[]> {
+  const since = new Date(Date.now() - windowMinutes * 60_000).toISOString()
+  const { data, error } = await client
+    .from("hotel_events")
+    .select("*")
+    .eq("room_id", roomId)
+    .gte("timestamp", since)
+    .order("timestamp", { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
 
-// TODO: implement getCvEvents
+/** CV events for a room within the last N minutes, newest first. */
 export async function getCvEvents(
-  _client: TypedClient,
-  _roomId: string,
-  _windowMinutes = 60
-) {
-  // TODO
-  return []
+  client: TypedClient,
+  roomId: string,
+  windowMinutes = 60
+): Promise<CvEventRow[]> {
+  const since = new Date(Date.now() - windowMinutes * 60_000).toISOString()
+  const { data, error } = await client
+    .from("cv_events")
+    .select("*")
+    .eq("room_id", roomId)
+    .gte("timestamp", since)
+    .order("timestamp", { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
 
-// TODO: implement getPersonHistory
-export async function getPersonHistory(_client: TypedClient, _personId: string) {
-  // TODO
-  return []
+/** Full stay history for a person, newest first. */
+export async function getPersonHistory(
+  client: TypedClient,
+  personId: string
+): Promise<PersonRoomHistoryRow[]> {
+  const { data, error } = await client
+    .from("person_room_history")
+    .select("*")
+    .eq("person_id", personId)
+    .order("purchase_timestamp", { ascending: false })
+  if (error) throw error
+  return data ?? []
 }
 
-// TODO: implement getRoomEventSummary
-export async function getRoomEventSummary(_client: TypedClient, _roomId: string) {
-  // TODO
-  return []
+/** Aggregated event-type counts for a room in the last 24 hours. */
+export async function getRoomEventSummary(
+  client: TypedClient,
+  roomId: string
+): Promise<{ event_type: string; count: number }[]> {
+  const since = new Date(Date.now() - 24 * 3_600_000).toISOString()
+  const { data, error } = await client
+    .from("hotel_events")
+    .select("event_type")
+    .eq("room_id", roomId)
+    .gte("timestamp", since)
+  if (error) throw error
+
+  const counts: Record<string, number> = {}
+  for (const row of data ?? []) {
+    counts[row.event_type] = (counts[row.event_type] ?? 0) + 1
+  }
+  return Object.entries(counts).map(([event_type, count]) => ({ event_type, count }))
 }
