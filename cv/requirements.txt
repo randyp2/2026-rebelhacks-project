@@ -1,0 +1,8 @@
+# SafeStay AI — CV pipeline dependencies
+# Install with: pip install -r requirements.txt
+
+ultralytics>=8.0.0        # YOLOv8 (includes torch dependency)
+opencv-python>=4.9.0      # frame capture and preprocessing
+supabase>=2.0.0           # Supabase Python client for cv_events ingestion
+python-dotenv>=1.0.0      # load .env for SUPABASE_URL, SUPABASE_SERVICE_KEY, etc.
+numpy>=1.26.0             # array operations (pulled in by ultralytics but pinned here)
