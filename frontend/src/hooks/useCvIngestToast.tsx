@@ -112,32 +112,55 @@ function GeminiToast({ shortId, roomLabel, cameraLabel }: {
   )
 }
 
+function fireToast(videoId: string, roomId: string, cameraId: string | null | undefined) {
+  const shortId = videoId.slice(0, 16)
+  const roomLabel = roomId ? `Room ${roomId}` : null
+  const cameraLabel = cameraId ?? null
+  toast.custom(() => (
+    <GeminiToast shortId={shortId} roomLabel={roomLabel} cameraLabel={cameraLabel} />
+  ), { duration: 7000 })
+}
+
 export function useCvIngestToast(): void {
   const seenVideoIds = useRef<Set<string>>(new Set())
 
+  // Initial fetch: catch frames that arrived before the Realtime subscription
+  // was fully established (race condition on first uploader post).
+  useEffect(() => {
+    const supabase = createClient()
+    const cutoff = new Date(Date.now() - 60_000).toISOString()
+    supabase
+      .from("cv_frame_analysis")
+      .select("video_id,room_id,camera_id")
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: true })
+      .limit(20)
+      .then(({ data }) => {
+        if (!data) return
+        for (const row of data) {
+          if (!row.video_id || seenVideoIds.current.has(row.video_id)) continue
+          seenVideoIds.current.add(row.video_id)
+          fireToast(row.video_id, row.room_id, row.camera_id)
+        }
+      })
+      .catch(() => { /* best-effort; Realtime subscription is the primary path */ })
+  }, [])
+
+  // Ongoing Realtime subscription for frames arriving after mount.
+  // Uses event "*" instead of just "INSERT" because Supabase may emit the
+  // first upsert write as an UPDATE depending on the ON CONFLICT path.
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
       .channel("cv-ingest-toast")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "cv_frame_analysis" },
+        { event: "*", schema: "public", table: "cv_frame_analysis" },
         (payload) => {
           const row = payload.new as FrameRow
           if (!row.video_id || seenVideoIds.current.has(row.video_id)) return
           seenVideoIds.current.add(row.video_id)
-
-          const shortId = row.video_id.slice(0, 16)
-          const roomLabel = row.room_id ? `Room ${row.room_id}` : null
-          const cameraLabel = row.camera_id ?? null
-
-          toast.custom(() => (
-            <GeminiToast
-              shortId={shortId}
-              roomLabel={roomLabel}
-              cameraLabel={cameraLabel}
-            />
-          ), { duration: 7000 })
+          fireToast(row.video_id, row.room_id, row.camera_id)
         }
       )
       .subscribe()
