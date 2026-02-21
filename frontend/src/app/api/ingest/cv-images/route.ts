@@ -358,10 +358,10 @@ export async function POST(req: Request) {
 	const videoId = batch[0]?.video_id ?? null;
 
 	if (videoId) {
-		await supabaseAdmin.from('cv_ingest_progress').upsert(
+		void supabaseAdmin.from('cv_ingest_progress').upsert(
 			{ video_id: videoId, room_id: batch[0]?.room_id ?? null, stage: 'uploading', updated_at: new Date().toISOString() },
 			{ onConflict: 'video_id' }
-		).then(() => {/* fire-and-forget */}).catch(() => {/* ignore */});
+		);
 	}
 
 	const evidenceEnabled = parseBooleanFlag(process.env.CV_EVIDENCE_ENABLED, true);
@@ -405,10 +405,10 @@ export async function POST(req: Request) {
 	}
 
 	if (videoId) {
-		await supabaseAdmin.from('cv_ingest_progress').upsert(
+		void supabaseAdmin.from('cv_ingest_progress').upsert(
 			{ video_id: videoId, room_id: batch[0]?.room_id ?? null, stage: 'analyzing', updated_at: new Date().toISOString() },
 			{ onConflict: 'video_id' }
-		).then(() => {/* fire-and-forget */}).catch(() => {/* ignore */});
+		);
 	}
 
 	let batchSummary: BatchAnalysisSummary | null = null;

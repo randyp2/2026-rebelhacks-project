@@ -185,10 +185,10 @@ export async function POST(req: Request) {
 
 	const { video_id: videoId, model } = parsed.data;
 
-	await supabaseAdmin.from('cv_ingest_progress').upsert(
+	void supabaseAdmin.from('cv_ingest_progress').upsert(
 		{ video_id: videoId, stage: 'finalizing', updated_at: new Date().toISOString() },
 		{ onConflict: 'video_id' }
-	).then(() => {/* fire-and-forget */}).catch(() => {/* ignore */});
+	);
 
 	let frames: FrameAnalysis[];
 	try {
@@ -234,8 +234,7 @@ export async function POST(req: Request) {
 		);
 	}
 
-	await supabaseAdmin.from('cv_ingest_progress').delete().eq('video_id', videoId)
-		.then(() => {/* fire-and-forget */}).catch(() => {/* ignore */});
+	void supabaseAdmin.from('cv_ingest_progress').delete().eq('video_id', videoId);
 
 	return NextResponse.json({
 		ok: true,
