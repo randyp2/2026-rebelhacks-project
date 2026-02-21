@@ -1,24 +1,81 @@
-// TODO: Implement AlertFeed
-// Real-time scrollable list of threshold-breach alerts from the `alerts` table.
-//
-// Behavior:
-//   - Subscribes to Supabase Realtime INSERT events on the `alerts` table
-//     via the useAlertsRealtime hook (see lib/supabase/realtime.ts)
-//   - Each alert row shows: room_id, risk_score, explanation, relative timestamp
-//   - New alerts slide in at the top; cap the visible list at 50 entries
-//   - Highlight rows with risk_score > 20 in red
-//
-// Data flow:
-//   Parent (DashboardPage) fetches initial alerts and passes them in;
-//   this component appends real-time additions client-side.
+"use client"
+/**
+ * AlertFeed
+ *
+ * Pure presentational component — receives live alerts from the parent
+ * (via useAlerts hook) rather than subscribing itself to avoid
+ * duplicate Supabase channels.
+ *
+ * Rows with risk_score > 20 are highlighted in red.
+ */
 
+import { getRiskLevel, getRiskColor, formatRiskScore } from "@/lib/risk/scoring"
 import type { AlertRow } from "@/types/database"
 
 type AlertFeedProps = {
-  initialAlerts: AlertRow[]
+  alerts: AlertRow[]
 }
 
-export default function AlertFeed(_props: AlertFeedProps) {
-  // TODO: implement
-  return null
+function timeAgo(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime()
+  const m = Math.floor(diff / 60_000)
+  if (m < 1) return "just now"
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
+export default function AlertFeed({ alerts }: AlertFeedProps) {
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="mb-3 flex shrink-0 items-center justify-between">
+        <span className="text-sm font-semibold text-slate-200">Live Alerts</span>
+        <span className="text-[10px] uppercase tracking-wider text-slate-500">
+          {alerts.length} recent
+        </span>
+      </div>
+
+      {/* Scrollable list */}
+      <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
+        {alerts.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-xs italic text-slate-600">No alerts — all clear</p>
+          </div>
+        ) : (
+          alerts.map((alert) => {
+            const level = getRiskLevel(alert.risk_score)
+            const color = getRiskColor(level)
+            const isCritical = alert.risk_score > 20
+
+            return (
+              <div
+                key={alert.id}
+                className={[
+                  "rounded-md border p-3 text-xs transition-colors",
+                  isCritical
+                    ? "border-red-500/30 bg-red-950/20"
+                    : "border-white/5 bg-white/[0.03]",
+                ].join(" ")}
+              >
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="font-mono font-semibold text-slate-200">
+                    Room {alert.room_id}
+                  </span>
+                  <span className={`font-mono font-bold ${color}`}>
+                    {formatRiskScore(alert.risk_score)}
+                  </span>
+                </div>
+                {alert.explanation && (
+                  <p className="mb-1 leading-snug text-slate-400">{alert.explanation}</p>
+                )}
+                <p className="text-slate-600">{timeAgo(alert.timestamp)}</p>
+              </div>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
 }

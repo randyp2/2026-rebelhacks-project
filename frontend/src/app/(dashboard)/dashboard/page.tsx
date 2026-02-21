@@ -1,51 +1,55 @@
-// TODO: Implement the main SafeStay AI dashboard page
-//
-// This is a server component that:
-//   1. Authenticates the user (redirect to "/" if unauthenticated)
-//   2. Fetches initial data via server-side Supabase queries:
-//        - getRoomRisks(supabase)    → passed to <RoomGrid>
-//        - getRecentAlerts(supabase) → passed to <AlertFeed>
-//   3. Renders the dashboard shell with:
-//        - <Header title="Overview" .../>
-//        - <RoomGrid rooms={rooms} onRoomSelect={...} />
-//        - <AlertFeed initialAlerts={alerts} />
-//        - <RiskScoreChart .../>  (rendered for selected room; start with room 0)
-//
-// Layout sketch:
-//   ┌─────────────────────────────────────────────┐
-//   │  Header                                     │
-//   ├──────────────────────┬──────────────────────┤
-//   │  RoomGrid            │  AlertFeed           │
-//   │  (left 2/3)          │  (right 1/3)         │
-//   ├──────────────────────┴──────────────────────┤
-//   │  RiskScoreChart (full width, selected room) │
-//   └─────────────────────────────────────────────┘
+/**
+ * DashboardPage
+ *
+ * Currently running in DEMO MODE — uses local placeholder data.
+ *
+ * TODO: restore Supabase auth + data fetching:
+ *   1. Uncomment the auth block below
+ *   2. Replace MOCK_ROOMS / MOCK_ALERTS with getRoomRisks / getRecentAlerts
+ *   3. Delete src/lib/mockData.ts once Supabase tables are populated
+ */
 
-import { createServerSupabaseClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
+// TODO (step 1): uncomment when Supabase auth is ready
+// import { redirect } from "next/navigation"
+// import { createServerSupabaseClient } from "@/utils/supabase/server"
+// import { getRoomRisks, getRecentAlerts } from "@/lib/supabase/queries"
+
+import { MOCK_ROOMS, MOCK_ALERTS } from "@/lib/mockData"
+import Header from "@/components/layout/Header"
+import DashboardClient from "@/components/dashboard/DashboardClient"
 
 export default async function DashboardPage() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+  // TODO (step 1): replace mock data block with this once Supabase is wired up:
+  //
+  // const supabase = await createServerSupabaseClient()
+  // const { data: { user }, error } = await supabase.auth.getUser()
+  // if (!user || error) redirect("/")
+  //
+  // const [rooms, alerts] = await Promise.all([
+  //   getRoomRisks(supabase).catch(() => []),
+  //   getRecentAlerts(supabase).catch(() => []),
+  // ])
+  //
+  // const userFullName = (user.user_metadata?.full_name as string) ?? user.email ?? null
+  // const oneHourAgo = Date.now() - 3_600_000
+  // const recentAlertCount = alerts.filter(
+  //   (a) => new Date(a.timestamp).getTime() > oneHourAgo
+  // ).length
 
-  if (!user || error) {
-    redirect("/")
-  }
-
-  // TODO: const rooms = await getRoomRisks(supabase)
-  // TODO: const alerts = await getRecentAlerts(supabase)
+  const rooms = MOCK_ROOMS
+  const alerts = MOCK_ALERTS
+  const userFullName = "Demo User"
+  const recentAlertCount = alerts.length
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* TODO: <Header title="Overview" userFullName={user.user_metadata?.full_name} userAvatarUrl={null} /> */}
-      <main className="flex flex-1 gap-4 p-4">
-        {/* TODO: <RoomGrid rooms={rooms} onRoomSelect={...} /> */}
-        {/* TODO: <AlertFeed initialAlerts={alerts} /> */}
-      </main>
-      {/* TODO: <RiskScoreChart roomId={selectedRoom} data={chartData} /> */}
+    <div className="flex h-full flex-col overflow-hidden">
+      <Header
+        title="Overview"
+        userFullName={userFullName}
+        userAvatarUrl={null}
+        unreadAlertCount={recentAlertCount}
+      />
+      <DashboardClient initialRooms={rooms} initialAlerts={alerts} />
     </div>
   )
 }

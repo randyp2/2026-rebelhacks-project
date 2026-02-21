@@ -52,25 +52,28 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  // Redirect unauthenticated users away from /dashboard
-  if (!user && pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/", request.url);
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
-    }
-    return redirectResponse;
-  }
+  // TODO: restore auth guards once Supabase auth is working end-to-end.
+  // Uncomment both blocks below to re-enable:
 
-  // Redirect authenticated users away from login page
-  if (user && pathname === "/") {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    const redirectResponse = NextResponse.redirect(dashboardUrl);
-    for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
-    }
-    return redirectResponse;
-  }
+  // // Redirect unauthenticated users away from /dashboard
+  // if (!user && pathname.startsWith("/dashboard")) {
+  //   const loginUrl = new URL("/", request.url);
+  //   const redirectResponse = NextResponse.redirect(loginUrl);
+  //   for (const cookie of response.cookies.getAll()) {
+  //     redirectResponse.cookies.set(cookie);
+  //   }
+  //   return redirectResponse;
+  // }
+
+  // // Redirect authenticated users away from login page
+  // if (user && pathname === "/") {
+  //   const dashboardUrl = new URL("/dashboard", request.url);
+  //   const redirectResponse = NextResponse.redirect(dashboardUrl);
+  //   for (const cookie of response.cookies.getAll()) {
+  //     redirectResponse.cookies.set(cookie);
+  //   }
+  //   return redirectResponse;
+  // }
 
   return response;
 }

@@ -1,29 +1,4 @@
-// TODO: Implement client-side risk scoring display helpers
-//
-// NOTE: The authoritative scoring runs server-side in the Supabase Edge Function
-// `score-risk` (see supabase/functions/score-risk/index.ts).
-// This module contains only display-layer helpers used by the frontend.
-//
-// Functions to implement:
-//
-//   getRiskLevel(score: number): "low" | "medium" | "high" | "critical"
-//     Thresholds:
-//       0–4   → "low"
-//       5–14  → "medium"
-//       15–24 → "high"
-//       25+   → "critical"
-//
-//   getRiskColor(level: RiskLevel): string
-//     Returns a Tailwind CSS color class string for the given level.
-//     e.g. "text-green-500", "text-yellow-500", "text-orange-500", "text-red-600"
-//
-//   formatRiskScore(score: number): string
-//     Returns the score formatted to one decimal place (e.g. "12.3")
-//
-//   explainSignals(signals: SignalInput[]): string
-//     Given a list of triggered signals, returns a human-readable
-//     explanation string for the alerts table's `explanation` column.
-//     e.g. "Linen spike (×3) + CV traffic anomaly (×2) + Keycard resets (×1)"
+// Display-layer risk helpers — authoritative scoring lives in the score-risk Edge Function.
 
 export type RiskLevel = "low" | "medium" | "high" | "critical"
 
@@ -33,26 +8,41 @@ export type SignalInput = {
   weight: number
 }
 
-// TODO: implement getRiskLevel
-export function getRiskLevel(_score: number): RiskLevel {
-  // TODO
+/** Map a numeric risk score to a severity bucket. */
+export function getRiskLevel(score: number): RiskLevel {
+  if (score >= 25) return "critical"
+  if (score >= 15) return "high"
+  if (score >= 5) return "medium"
   return "low"
 }
 
-// TODO: implement getRiskColor
-export function getRiskColor(_level: RiskLevel): string {
-  // TODO
-  return "text-gray-500"
+/** Tailwind text-color class for a given risk level. */
+export function getRiskColor(level: RiskLevel): string {
+  switch (level) {
+    case "critical": return "text-red-500"
+    case "high":     return "text-orange-400"
+    case "medium":   return "text-yellow-400"
+    case "low":      return "text-emerald-400"
+  }
 }
 
-// TODO: implement formatRiskScore
-export function formatRiskScore(_score: number): string {
-  // TODO
-  return "0.0"
+/** Format score to one decimal place (e.g. 12.3). */
+export function formatRiskScore(score: number): string {
+  return score.toFixed(1)
 }
 
-// TODO: implement explainSignals
-export function explainSignals(_signals: SignalInput[]): string {
-  // TODO
-  return ""
+/**
+ * Convert a list of triggered signals into a human-readable sentence.
+ * e.g. "Linen spike (×3) + CV traffic anomaly (×1)"
+ */
+export function explainSignals(signals: SignalInput[]): string {
+  if (!signals.length) return "No signals triggered"
+  return signals
+    .filter((s) => s.frequency > 0)
+    .sort((a, b) => b.weight * b.frequency - a.weight * a.frequency)
+    .map((s) => {
+      const label = s.type.replace(/_/g, " ")
+      return `${label.charAt(0).toUpperCase() + label.slice(1)} (×${s.frequency})`
+    })
+    .join(" + ")
 }
