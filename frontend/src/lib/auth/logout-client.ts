@@ -3,10 +3,8 @@
 import { createClient } from "@/utils/supabase/client";
 
 export async function signoutClient() {
-  const supabase = await createClient();
+  const supabase = createClient();
 
-  // Sign out the user
+  // Signs out on the browser client — clears both cookies and localStorage
   await supabase.auth.signOut();
-
-  // CANNOT REDIRECT FROM CLIENT ONLY ON SERVER
 }

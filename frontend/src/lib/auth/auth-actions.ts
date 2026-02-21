@@ -92,6 +92,7 @@ export async function signout() {
     redirect("/error");
   }
 
+  revalidatePath("/", "layout");
   redirect("/");
 }
 

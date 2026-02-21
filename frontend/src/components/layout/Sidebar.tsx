@@ -5,7 +5,7 @@
  *
  * Fixed-width navigation rail for all dashboard pages.
  * Active route is highlighted via usePathname().
- * Sign-out navigates to the /logout page.
+ * Sign-out calls the browser Supabase client then navigates to login.
  */
 
 import {
@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { signoutClient } from "@/lib/auth/logout-client";
 
 const NAV_ITEMS = [
 	{ href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -38,7 +39,6 @@ type SidebarProps = {
 
 export default function Sidebar({ userFullName }: SidebarProps) {
 	const pathname = usePathname();
-	const router = useRouter();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +111,10 @@ export default function Sidebar({ userFullName }: SidebarProps) {
 						</div>
 						<button
 							type="button"
-							onClick={() => router.push("/logout")}
+							onClick={async () => {
+								await signoutClient();
+								window.location.href = "/";
+							}}
 							className="mt-1 flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground/80 transition hover:bg-accent hover:text-accent-foreground"
 						>
 							<LogOut className="h-4 w-4 shrink-0" />

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          response.cookies.set({ name, value: "", ...options });
+          response.cookies.set({ name, value: "", ...options, maxAge: 0 });
         },
       },
     },

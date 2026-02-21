@@ -1,11 +1,22 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * - Create supabase client that can read and write cookies
+ * - Check for OAuth "code" in URL
+ *    - If found, exchange it for session tokens
+ * - If not, just validate existing session
+ *
+ * @param request
+ * @returns
+ */
 export async function updateSession(request: NextRequest) {
-  const response = NextResponse.next({
+  // Let request continue normally
+  let response = NextResponse.next({
     request: { headers: request.headers },
   });
 
+  // Connect to supabase backend
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -21,17 +32,19 @@ export async function updateSession(request: NextRequest) {
           response.cookies.set({ name, value: "", ...options });
         },
       },
-    },
+    }
   );
 
+  // Get the request URL
   const { searchParams } = new URL(request.url);
+  // Search for "code" param (OAuth redirect)
   const code = searchParams.get("code");
 
   if (code) {
     await supabase.auth.exchangeCodeForSession(code);
 
     const nextUrl = new URL(request.url);
-    nextUrl.searchParams.delete("code");
+    nextUrl.searchParams.delete("code"); // Remove the oauth code from URL
 
     const redirectTo = nextUrl.searchParams.get("redirect_to");
     if (redirectTo) {
@@ -42,36 +55,15 @@ export async function updateSession(request: NextRequest) {
       return redirectResponse;
     }
 
+    // Default redirect
     const redirectResponse = NextResponse.redirect(nextUrl);
     for (const cookie of response.cookies.getAll()) {
       redirectResponse.cookies.set(cookie);
     }
+
     return redirectResponse;
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
-
-  // Redirect unauthenticated users away from /dashboard
-  if (!user && pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/", request.url);
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
-    }
-    return redirectResponse;
-  }
-
-  // Redirect authenticated users away from login page
-  if (user && pathname === "/") {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    const redirectResponse = NextResponse.redirect(dashboardUrl);
-    for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
-    }
-    return redirectResponse;
-  }
-
+  await supabase.auth.getUser();
   return response;
 }
-
