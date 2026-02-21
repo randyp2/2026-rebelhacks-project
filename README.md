@@ -1,4 +1,5 @@
 # HotelGuard (SafeStay AI)
+*website url:* https://hotelguard.vercel.app
 
 HotelGuard is a hotel risk-monitoring dashboard that combines:
 - Operational webhook events (PMS + housekeeping)
