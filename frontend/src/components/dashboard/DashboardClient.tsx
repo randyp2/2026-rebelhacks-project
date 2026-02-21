@@ -25,6 +25,7 @@ import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel";
 import { useAlerts } from "@/hooks/useAlerts";
 import type { EnrichedRoom } from "@/hooks/useRoomRisk";
 import { useRoomRisk } from "@/hooks/useRoomRisk";
+import { useCvIngestToast } from "@/hooks/useCvIngestToast";
 import type { AlertRow } from "@/types/database";
 import type { DashboardRoom } from "@/types/dashboard";
 import Spinner from "../ui/spinner";
@@ -86,6 +87,7 @@ export default function DashboardClient({
 
 	const { rooms, floorData } = useRoomRisk(initialRooms);
 	const alerts = useAlerts(initialAlerts);
+	useCvIngestToast();
 
 	const floorRooms = useMemo(
 		() =>
