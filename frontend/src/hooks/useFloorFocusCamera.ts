@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as THREE from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+
+type OrbitControlsLike = {
+  target: THREE.Vector3;
+  update: () => void;
+};
 
 export type CameraPose = {
   position: THREE.Vector3;
@@ -26,7 +30,7 @@ export function useFloorFocusCamera({
   onFloorSelect,
 }: UseFloorFocusCameraArgs) {
   const cameraRef = useRef<THREE.Camera | null>(null);
-  const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const controlsRef = useRef<OrbitControlsLike | null>(null);
   const preFocusPoseRef = useRef<CameraPose | null>(null);
   const prevSelectedFloorRef = useRef<number | null>(selectedFloor);
 
