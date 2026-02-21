@@ -15,7 +15,7 @@ type HeaderProps = {
 
 export default function Header({ title }: HeaderProps) {
 	return (
-		<header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-sidebar px-6">
+		<header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
 			{/* Page title */}
 			<div className="flex items-center gap-2">
 				<span className="text-[10px] uppercase tracking-widest text-muted-foreground">

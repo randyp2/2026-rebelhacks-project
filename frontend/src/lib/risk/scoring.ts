@@ -2,6 +2,12 @@
 
 export type RiskLevel = "low" | "medium" | "high" | "critical"
 
+const RISK_THRESHOLDS = {
+  medium: 40,
+  high: 65,
+  critical: 85,
+} as const
+
 export type SignalInput = {
   type: string
   frequency: number
@@ -10,9 +16,9 @@ export type SignalInput = {
 
 /** Map a numeric risk score to a severity bucket. */
 export function getRiskLevel(score: number): RiskLevel {
-  if (score >= 25) return "critical"
-  if (score >= 15) return "high"
-  if (score >= 5) return "medium"
+  if (score >= RISK_THRESHOLDS.critical) return "critical"
+  if (score >= RISK_THRESHOLDS.high) return "high"
+  if (score >= RISK_THRESHOLDS.medium) return "medium"
   return "low"
 }
 
@@ -28,7 +34,9 @@ export function getRiskColor(level: RiskLevel): string {
 
 /** Format score to one decimal place (e.g. 12.3). */
 export function formatRiskScore(score: number): string {
-  return score.toFixed(1)
+  const safe = Number.isFinite(score) ? score : 0
+  const clamped = Math.min(100, Math.max(0, safe))
+  return clamped.toFixed(1)
 }
 
 /**

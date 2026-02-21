@@ -56,6 +56,8 @@ export const MOCK_ROOMS: RoomRiskRow[] = Array.from(
 export const MOCK_ALERTS: AlertRow[] = [
   {
     id: "a1",
+    alert_type: "RISK_THRESHOLD",
+    person_id: null,
     room_id: "501",
     risk_score: 24.0,
     alert_type: "cv_anomaly",
@@ -65,6 +67,8 @@ export const MOCK_ALERTS: AlertRow[] = [
   },
   {
     id: "a2",
+    alert_type: "RISK_THRESHOLD",
+    person_id: null,
     room_id: "412",
     risk_score: 19.5,
     alert_type: "keycard",
@@ -74,6 +78,8 @@ export const MOCK_ALERTS: AlertRow[] = [
   },
   {
     id: "a3",
+    alert_type: "RISK_THRESHOLD",
+    person_id: null,
     room_id: "503",
     risk_score: 22.1,
     alert_type: "cv_anomaly",
@@ -83,6 +89,8 @@ export const MOCK_ALERTS: AlertRow[] = [
   },
   {
     id: "a4",
+    alert_type: "RISK_THRESHOLD",
+    person_id: null,
     room_id: "308",
     risk_score: 15.3,
     alert_type: "linen",
@@ -92,6 +100,8 @@ export const MOCK_ALERTS: AlertRow[] = [
   },
   {
     id: "a5",
+    alert_type: "RISK_THRESHOLD",
+    person_id: null,
     room_id: "601",
     risk_score: 16.8,
     alert_type: "keycard",

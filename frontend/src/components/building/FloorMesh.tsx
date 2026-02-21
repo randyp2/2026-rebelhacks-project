@@ -41,6 +41,7 @@ const SLAB_D = 9;
 const GRID_COLS = 10;
 const TILE_Y = SLAB_H / 2 + 0.04; // sits just above the top face
 const TILE_W = (SLAB_W / GRID_COLS) * 0.88;
+const DEFAULT_RAYCAST: THREE.Object3D["raycast"] = THREE.Mesh.prototype.raycast;
 const NO_RAYCAST: THREE.Object3D["raycast"] = () => null;
 
 const FloorMesh = memo(function FloorMesh({
@@ -99,9 +100,10 @@ const FloorMesh = memo(function FloorMesh({
 		// Slab opacity: fade non-selected floors when any floor is selected
 		const slab = slabMatRef.current;
 		if (slab) {
+			const slabTargetOpacity = isSelected || !hasSelection ? 1.0 : 0.0;
 			slab.opacity = THREE.MathUtils.lerp(
 				slab.opacity,
-				isSelected || !hasSelection ? 1.0 : 0.0,
+				slabTargetOpacity,
 				speed,
 			);
 		}
@@ -119,41 +121,36 @@ const FloorMesh = memo(function FloorMesh({
 			{/* Inner group: animated by useFrame (rotation, z-position) */}
 			<group ref={animRef}>
 					{/* ── Main slab ── */}
-					<mesh
-						raycast={canInteractWithSlab ? undefined : NO_RAYCAST}
-						onClick={
-							canInteractWithSlab
-								? (e) => {
-										e.stopPropagation();
-										if (isFocusedFloor) return;
-										// Ignore drag-end clicks from OrbitControls; only focus on real clicks.
-										if (e.delta > 4) return;
-										onClick();
-									}
-								: undefined
-						}
-						onPointerOver={
-							canInteractWithSlab
-								? (e) => {
-										if (isFocusedFloor) {
-											document.body.style.cursor = "default";
-											return;
+						<mesh
+							raycast={canInteractWithSlab ? DEFAULT_RAYCAST : NO_RAYCAST}
+							onClick={
+								canInteractWithSlab
+									? (e) => {
+											e.stopPropagation();
+											// Ignore drag-end clicks from OrbitControls; only focus on real clicks.
+											if (e.delta > 4) return;
+											onClick();
 										}
-										e.stopPropagation();
-										setHoveredSlab(true);
-										document.body.style.cursor = "pointer";
-									}
-								: undefined
-						}
-						onPointerOut={
-							canInteractWithSlab
-								? () => {
-										setHoveredSlab(false);
-										document.body.style.cursor = isFocusedFloor ? "pointer" : "default";
-									}
-								: undefined
-						}
-					>
+									: undefined
+							}
+							onPointerOver={
+								canInteractWithSlab
+									? (e) => {
+											e.stopPropagation();
+											setHoveredSlab(true);
+											document.body.style.cursor = "pointer";
+										}
+									: undefined
+							}
+							onPointerOut={
+								canInteractWithSlab
+									? () => {
+											setHoveredSlab(false);
+											document.body.style.cursor = hasSelection ? "pointer" : "default";
+										}
+									: undefined
+							}
+						>
 						<boxGeometry args={[SLAB_W, SLAB_H, SLAB_D]} />
 						<meshStandardMaterial
 							ref={slabMatRef}

@@ -26,17 +26,6 @@ type AlertWithTiedPersons = AlertRow & {
 	tied_person_names: string[];
 };
 
-function normalizeExplanation(explanation: string | null): string | null {
-	if (!explanation) return explanation;
-	if (!explanation.includes("Room risk threshold")) return explanation;
-
-	const firstPeriodIndex = explanation.indexOf(".");
-	if (firstPeriodIndex === -1) return explanation;
-
-	const normalized = explanation.slice(firstPeriodIndex + 1).trim();
-	return normalized.length > 0 ? normalized : explanation;
-}
-
 function buildRoomToNames(persons: PersonWithRiskRow[]): Map<string, string[]> {
 	const roomToNamesSet = new Map<string, Set<string>>();
 
@@ -80,7 +69,7 @@ function normalizeAlert(
 
 	return {
 		...alert,
-		explanation: normalizeExplanation(alert.explanation),
+		explanation: alert.explanation,
 		tied_person_names:
 			directPersonName !== null && directPersonName !== undefined
 				? [directPersonName]

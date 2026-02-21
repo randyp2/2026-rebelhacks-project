@@ -1,12 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "npm:@supabase/supabase-js@2"
 
-const ALERT_THRESHOLD = Number(Deno.env.get("ALERT_THRESHOLD") ?? "15")
+const ALERT_THRESHOLD = Number(Deno.env.get("ALERT_THRESHOLD") ?? "10")
 const HIGH_PERSON_RISK_THRESHOLD = Number(
   Deno.env.get("HIGH_PERSON_RISK_THRESHOLD") ?? "70",
 )
 const DEFAULT_LOOKBACK_HOURS = Number(Deno.env.get("LOOKBACK_HOURS") ?? "24")
-const DEFAULT_WINDOW_MINUTES = Number(Deno.env.get("WINDOW_MINUTES") ?? "60")
+const DEFAULT_WINDOW_MINUTES = Number(Deno.env.get("WINDOW_MINUTES") ?? "1440")
 const DEFAULT_LIMIT = Number(Deno.env.get("SCORE_RISK_LIMIT") ?? "100")
 
 const CORS_HEADERS = {
@@ -15,12 +15,12 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-// Signal weights as defined in the PRD
+// Signal weights mirrored from compute_room_risk defaults.
 const SIGNAL_WEIGHTS: Record<string, number> = {
-  short_stay: 2,
-  linen_spike: 3,
-  keycard_reset: 3,
-  cv_traffic_anomaly: 5,
+  short_stay: 4,
+  linen_spike: 5,
+  keycard_reset: 5,
+  cv_traffic_anomaly: 7,
 }
 
 type ScoreRiskRequest = {

@@ -98,7 +98,7 @@ export async function getRecentAlerts(
   client: TypedClient,
   limit = 50
 ): Promise<AlertRow[]> {
-  const HIGH_RISK_THRESHOLD = 15
+  const HIGH_RISK_THRESHOLD = 10
 
   const [alertsResult, roomRiskResult, roomsResult] = await Promise.all([
     client

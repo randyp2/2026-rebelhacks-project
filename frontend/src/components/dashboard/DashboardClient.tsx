@@ -43,6 +43,7 @@ type Props = {
 		{
 			name: string;
 			riskLevel: string | null;
+			riskScore: number | null;
 		}[]
 	>;
 };
@@ -94,13 +95,9 @@ export default function DashboardClient({
 		[rooms, selectedFloor],
 	);
 
-	const handleFloorSelect = (floor: number) => {
-		// Toggle: clicking the same floor again deselects it
-		setSelectedFloor((prev) => {
-			const next = prev === floor ? null : floor;
-			if (next === null) setIsFloorMapOpen(false);
-			return next;
-		});
+	const handleFloorSelect = (floor: number | null) => {
+		setSelectedFloor(floor);
+		if (floor === null) setIsFloorMapOpen(false);
 		setSelectedRoom(null);
 	};
 
@@ -120,7 +117,7 @@ export default function DashboardClient({
 	);
 
 	return (
-		<div className="flex min-h-0 flex-1 gap-4 p-4">
+		<div className="flex min-h-full gap-4 p-4">
 			{/* ── Left column: 3D view ── */}
 			<div className="flex min-w-0 flex-1 flex-col gap-4">
 				<div className="rounded-lg border border-primary/10 overflow-hidden h-[820px]">

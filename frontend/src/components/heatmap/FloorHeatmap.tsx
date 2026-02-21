@@ -10,6 +10,7 @@
 import { useMemo } from "react"
 import RoomTile from "./RoomTile"
 import { getRiskHexColor } from "@/lib/riskColor"
+import { formatRiskScore } from "@/lib/risk/scoring"
 import type { EnrichedRoom } from "@/hooks/useRoomRisk"
 
 type FloorHeatmapProps = {
@@ -21,10 +22,10 @@ type FloorHeatmapProps = {
 }
 
 const LEGEND = [
-  { label: "Low",      score: 2  },
-  { label: "Medium",   score: 10 },
-  { label: "High",     score: 20 },
-  { label: "Critical", score: 30 },
+  { label: "Low",      score: 20 },
+  { label: "Medium",   score: 40 },
+  { label: "High",     score: 65 },
+  { label: "Critical", score: 85 },
 ] as const
 const CLUSTER_SIZE = 5
 
@@ -88,7 +89,7 @@ export default function FloorHeatmap({
     const firstId = Array.from(hottestRoomIds)[0]
     if (!firstId) return null
     const room = roomById.get(firstId)
-    return room ? `Room ${room.room_id} (${room.risk_score.toFixed(1)})` : null
+    return room ? `Room ${room.room_id} (${formatRiskScore(room.risk_score)})` : null
   }, [hottestRoomIds, roomById])
 
   const hottestClusterSummary = useMemo(() => {
@@ -96,7 +97,7 @@ export default function FloorHeatmap({
     const ids = Array.from(hottestCluster.roomIds).sort((a, b) => Number(a) - Number(b))
     const first = ids[0]
     const last = ids[ids.length - 1]
-    return `${first}-${last} (${hottestCluster.averageRisk.toFixed(1)} avg)`
+    return `${first}-${last} (${formatRiskScore(hottestCluster.averageRisk)} avg)`
   }, [hottestCluster])
 
   return (
@@ -105,14 +106,14 @@ export default function FloorHeatmap({
       <div className="mb-3 flex items-center gap-2">
         <span className="text-sm font-semibold text-foreground">Floor {floor}</span>
         <span className="text-xs text-muted-foreground">— {rooms.length} rooms</span>
-        <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">
+        <span className="ml-auto text-[11px] text-muted-foreground uppercase tracking-wider">
           Click room for details
         </span>
         {onMinimize && (
           <button
             type="button"
             onClick={onMinimize}
-            className="rounded border border-border px-2 py-0.5 text-[10px] text-foreground/90 transition hover:bg-accent"
+            className="rounded border border-border px-2.5 py-1 text-[11px] text-foreground/90 transition hover:bg-accent"
           >
             Minimize
           </button>
@@ -135,7 +136,7 @@ export default function FloorHeatmap({
       {sorted.length > 0 ? (
         <div
           className="grid gap-2"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))" }}
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))" }}
         >
           {sorted.map((room) => (
             <RoomTile

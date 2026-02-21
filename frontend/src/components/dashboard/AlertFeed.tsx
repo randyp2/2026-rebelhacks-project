@@ -6,10 +6,11 @@
  * (via useAlerts hook) rather than subscribing itself to avoid
  * duplicate Supabase channels.
  *
- * Rows with risk_score > 20 are highlighted in red.
+ * Rows with critical risk are highlighted in red.
  */
 
 import { getRiskLevel, getRiskColor, formatRiskScore } from "@/lib/risk/scoring"
+import { parseAlertExplanation } from "@/lib/risk/explanations"
 import type { AlertRow } from "@/types/database"
 
 type AlertFeedProps = {
@@ -47,7 +48,8 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
           alerts.map((alert) => {
             const level = getRiskLevel(alert.risk_score)
             const color = getRiskColor(level)
-            const isCritical = alert.risk_score > 20
+            const isCritical = level === "critical"
+            const parsedExplanation = parseAlertExplanation(alert.explanation)
 
             return (
               <div
@@ -67,9 +69,9 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
                     {formatRiskScore(alert.risk_score)}
                   </span>
                 </div>
-                {alert.explanation && (
-                  <p className="mb-1 leading-snug text-muted-foreground">{alert.explanation}</p>
-                )}
+                <p className="mb-1 leading-snug text-muted-foreground">
+                  {parsedExplanation.summary}
+                </p>
                 <p className="text-muted-foreground">{timeAgo(alert.timestamp)}</p>
               </div>
             )
