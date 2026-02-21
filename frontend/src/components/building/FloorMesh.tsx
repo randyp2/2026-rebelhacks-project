@@ -35,13 +35,10 @@ const SLAB_W = 14;
 const SLAB_H = 0.65;
 const SLAB_D = 9;
 
-// Room tile grid: 10 cols × 5 rows on the slab top face
+// Room tile grid: fixed 10 cols, dynamic rows based on room count
 const GRID_COLS = 10;
-const GRID_ROWS = 5;
-const ROOM_SLOTS = GRID_COLS * GRID_ROWS;
 const TILE_Y = SLAB_H / 2 + 0.04; // sits just above the top face
-const TILE_W = 1.05;
-const TILE_D = 0.95;
+const TILE_W = (SLAB_W / GRID_COLS) * 0.88;
 const NEUTRAL_SLAB_COLOR = new THREE.Color("#334155");
 
 const FloorMesh = memo(function FloorMesh({
@@ -60,11 +57,16 @@ const FloorMesh = memo(function FloorMesh({
 
 	const [hoveredSlab, setHoveredSlab] = useState(false);
 	const [hoveredRoomId, setHoveredRoomId] = useState<string | null>(null);
-	// Pad rooms to exactly 50 slots (10×5 grid)
+
+	// Dynamic grid rows based on actual room count
+	const GRID_ROWS = Math.max(1, Math.ceil(rooms.length / GRID_COLS));
+	const TILE_D = (SLAB_D / GRID_ROWS) * 0.88;
+
+	// Pad rooms to fill all dynamic slots
 	const roomSlots = useMemo<(RoomRiskRow | null)[]>(() => {
-		const slots: (RoomRiskRow | null)[] = [];
-		for (let i = 0; i < ROOM_SLOTS; i++) slots.push(rooms[i] ?? null);
-		return slots;
+		const gridRows = Math.max(1, Math.ceil(rooms.length / GRID_COLS));
+		const slots = Math.max(GRID_COLS * gridRows, rooms.length);
+		return Array.from({ length: slots }, (_, i) => rooms[i] ?? null);
 	}, [rooms]);
 
 	useFrame((_, delta) => {

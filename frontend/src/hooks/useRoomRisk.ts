@@ -10,29 +10,26 @@
 
 import { useMemo } from "react"
 import { useRoomRiskRealtime } from "@/lib/supabase/realtime"
-import { groupRoomsByFloor, getFloorAverageRisk, getFloorFromRoomId } from "@/lib/riskUtils"
-import type { RoomRiskRow } from "@/types/database"
+import { groupRoomsByFloor, getFloorAverageRisk } from "@/lib/riskUtils"
+import type { DashboardRoom } from "@/types/dashboard"
 
 /** RoomRiskRow enriched with a pre-computed floor number. */
-export type EnrichedRoom = RoomRiskRow & { floor: number }
+export type EnrichedRoom = DashboardRoom
 
 /** Aggregated per-floor data used by Building3D. */
 export type FloorData = {
   floor: number
   averageRisk: number
-  rooms: RoomRiskRow[]
+  rooms: DashboardRoom[]
 }
 
-export function useRoomRisk(initialRooms: RoomRiskRow[]): {
+export function useRoomRisk(initialRooms: DashboardRoom[]): {
   rooms: EnrichedRoom[]
   floorData: FloorData[]
 } {
   const liveRooms = useRoomRiskRealtime(initialRooms)
 
-  const rooms = useMemo<EnrichedRoom[]>(
-    () => liveRooms.map((r) => ({ ...r, floor: getFloorFromRoomId(r.room_id) })),
-    [liveRooms]
-  )
+  const rooms = useMemo<EnrichedRoom[]>(() => liveRooms, [liveRooms])
 
   const floorData = useMemo<FloorData[]>(() => {
     const grouped = groupRoomsByFloor(liveRooms)
