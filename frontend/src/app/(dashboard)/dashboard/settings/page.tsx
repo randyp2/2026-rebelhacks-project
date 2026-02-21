@@ -28,7 +28,7 @@ export default async function SettingsPage() {
 		: { data: null };
 
 	return (
-		<div className="flex h-full items-start justify-center overflow-auto bg-background p-6">
+		<div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto overscroll-contain p-6">
 			<SettingsForms
 				initialHotelName={property?.name ?? ""}
 				membershipRole={membership?.role ?? null}

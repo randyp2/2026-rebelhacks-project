@@ -71,7 +71,7 @@ export default function Sidebar({ userFullName }: SidebarProps) {
 	}, [menuOpen]);
 
 	return (
-		<aside className="flex h-screen w-56 shrink-0 flex-col border-r border-border bg-background">
+		<aside className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-sidebar">
 			{/* Logo */}
 			<div className="flex h-14 items-center gap-2.5 border-b border-border px-4">
 				<Shield className="h-5 w-5 shrink-0 text-primary" />

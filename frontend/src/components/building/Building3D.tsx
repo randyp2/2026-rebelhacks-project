@@ -226,7 +226,7 @@ export default function Building3D({
 				}}
 				onPointerMissed={(e) => {
 					if (selectedFloor === null) return;
-					if ("delta" in e && typeof e.delta === "number" && e.delta > 4) return;
+					if ((e as MouseEvent & { delta: number }).delta > 4) return;
 					setBodyCursor("default");
 					clearFocusedFloor();
 				}}

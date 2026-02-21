@@ -25,8 +25,8 @@ import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel";
 import { useAlerts } from "@/hooks/useAlerts";
 import type { EnrichedRoom } from "@/hooks/useRoomRisk";
 import { useRoomRisk } from "@/hooks/useRoomRisk";
-import type { DashboardRoom } from "@/types/dashboard";
 import type { AlertRow } from "@/types/database";
+import type { DashboardRoom } from "@/types/dashboard";
 import Spinner from "../ui/spinner";
 
 // Lazy-load the Canvas so Three.js is never bundled into the server render
