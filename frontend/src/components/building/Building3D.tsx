@@ -226,7 +226,7 @@ export default function Building3D({
 				}}
 				onPointerMissed={(e) => {
 					if (selectedFloor === null) return;
-					if (e.delta > 4) return;
+					if ("delta" in e && typeof e.delta === "number" && e.delta > 4) return;
 					setBodyCursor("default");
 					clearFocusedFloor();
 				}}
@@ -295,7 +295,9 @@ export default function Building3D({
 					)}
 
 					<OrbitControls
-						ref={controlsRef}
+						ref={(instance) => {
+							controlsRef.current = instance;
+						}}
 						zoomSpeed={0.67}
 						rotateSpeed={0.67}
 						makeDefault
