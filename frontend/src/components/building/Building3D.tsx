@@ -211,8 +211,8 @@ export default function Building3D({
 					)}
 
 					<OrbitControls
-						zoomSpeed={1.69}
-						rotateSpeed={2}
+						zoomSpeed={0.67}
+						rotateSpeed={0.67}
 						makeDefault
 						enabled={!isFloorView}
 						enablePan={false}
