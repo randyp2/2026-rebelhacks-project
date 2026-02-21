@@ -2,6 +2,15 @@
 
 import { useMemo, useState } from "react"
 import { formatRiskScore, getRiskColor, getRiskLevel } from "@/lib/risk/scoring"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import type { AlertRow } from "@/types/database"
 
 type SortableKey = "room_id" | "risk_score" | "timestamp"
@@ -83,6 +92,22 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
   }, [currentPage, sorted])
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const paginationItems = useMemo<(number | "ellipsis-left" | "ellipsis-right")[]>(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, index) => index + 1)
+    }
+
+    const items: (number | "ellipsis-left" | "ellipsis-right")[] = [1]
+    const start = Math.max(2, currentPage - 1)
+    const end = Math.min(totalPages - 1, currentPage + 1)
+
+    if (start > 2) items.push("ellipsis-left")
+    for (let page = start; page <= end; page += 1) items.push(page)
+    if (end < totalPages - 1) items.push("ellipsis-right")
+
+    items.push(totalPages)
+    return items
+  }, [currentPage, totalPages])
 
   const requestSort = (key: SortableKey) => {
     let direction: "asc" | "desc" = "asc"
@@ -179,37 +204,52 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-center space-x-2">
-        <button
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50"
-        >
-          Prev
-        </button>
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              href="#"
+              aria-disabled={currentPage === 1}
+              onClick={(event) => {
+                event.preventDefault()
+                if (currentPage === 1) return
+                setCurrentPage((page) => Math.max(1, page - 1))
+              }}
+            />
+          </PaginationItem>
 
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`rounded px-3 py-1 ${
-              currentPage === i + 1
-                ? "bg-blue-600 text-white"
-                : "border border-white/15 bg-[#0a101b] text-slate-300"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
+          {paginationItems.map((item, index) => (
+            <PaginationItem key={typeof item === "number" ? item : `${item}-${index}`}>
+              {typeof item === "number" ? (
+                <PaginationLink
+                  href="#"
+                  isActive={item === currentPage}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    setCurrentPage(item)
+                  }}
+                >
+                  {item}
+                </PaginationLink>
+              ) : (
+                <PaginationEllipsis />
+              )}
+            </PaginationItem>
+          ))}
 
-        <button
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-          disabled={currentPage === totalPages}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+          <PaginationItem>
+            <PaginationNext
+              href="#"
+              aria-disabled={currentPage === totalPages}
+              onClick={(event) => {
+                event.preventDefault()
+                if (currentPage === totalPages) return
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   )
 }
