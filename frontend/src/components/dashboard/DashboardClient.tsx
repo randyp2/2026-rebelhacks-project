@@ -9,21 +9,38 @@
  *
  * Layout (desktop):
  *   ┌──────────────────────────────────┬──────────────────┐
- *   │  3D Building with in-scene       │  RoomDetailsPanel │
- *   │  heatmap on selected floor       │  AlertFeed        │
+/**
+ * Layout (desktop):
+ *   ┌──────────────────────────────────┬──────────────────┐
+ *   │  3D Building (top)               │  RoomDetailsPanel │
+ *   │  FloorHeatmap (when floor set)   │  NotificationList │
  *   └──────────────────────────────────┴──────────────────┘
  */
 
-import dynamic from "next/dynamic";
-import { Suspense, useCallback, useMemo, useState } from "react";
-import AlertFeed from "@/components/dashboard/AlertFeed";
-import FloorHeatmap from "@/components/heatmap/FloorHeatmap";
-import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel";
-import { useAlerts } from "@/hooks/useAlerts";
-import type { EnrichedRoom } from "@/hooks/useRoomRisk";
-import { useRoomRisk } from "@/hooks/useRoomRisk";
-import type { AlertRow, RoomRiskRow } from "@/types/database";
-import Spinner from "../ui/spinner";
+import dynamic from "next/dynamic"
+import { useCallback, useMemo, useState } from "react"
+
+import FloorHeatmap from "@/components/heatmap/FloorHeatmap"
+import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel"
+import { NotificationList } from "@/components/animate-ui/components/community/notification-list"
+import Spinner from "../ui/spinner"
+
+import { useRoomRisk } from "@/hooks/useRoomRisk"
+import { useAlerts } from "@/hooks/useAlerts"
+
+import type { EnrichedRoom } from "@/hooks/useRoomRisk"
+import type { AlertRow, RoomRiskRow } from "@/types/database"
+
+// Lazy-load the Canvas so Three.js is never bundled into the server render
+const Building3D = dynamic(() => import("@/components/building/Building3D"), {
+  ssr: false,
+  loading: () => <Spinner />,
+})
+
+type Props = {
+  initialRooms: RoomRiskRow[]
+  initialAlerts: AlertRow[]
+}
 
 // Lazy-load the Canvas so Three.js is never bundled into the server render
 const Building3D = dynamic(() => import("@/components/building/Building3D"), {
@@ -168,13 +185,11 @@ export default function DashboardClient({
 					/>
 				)}
 
-				{/* Alert feed — always visible */}
-				<div className="flex min-h-0 flex-1 flex-col rounded-lg border border-white/10 bg-[#0f1623] p-4">
-					<Suspense fallback={<AlertFeedFallback />}>
-						<AlertFeed alerts={alerts} />
-					</Suspense>
-				</div>
-			</div>
-		</div>
-	);
+        {/* Alert list — always visible */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <NotificationList alerts={alerts} />
+        </div>
+      </div>
+    </div>
+  )
 }

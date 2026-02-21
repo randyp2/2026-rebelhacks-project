@@ -55,6 +55,76 @@ export type Database = {
           },
         ]
       }
+      connector_mappings: {
+        Row: {
+          connector_id: string
+          created_at: string
+          id: string
+          mapping: Json
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          id?: string
+          mapping: Json
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          id?: string
+          mapping?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_mappings_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: true
+            referencedRelation: "connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connectors: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_seen_at: string | null
+          property_id: string
+          secret: string
+          system: string
+          vendor: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_seen_at?: string | null
+          property_id: string
+          secret: string
+          system: string
+          vendor: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_seen_at?: string | null
+          property_id?: string
+          secret?: string
+          system?: string
+          vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connectors_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cv_events: {
         Row: {
           entry_count: number
@@ -78,6 +148,69 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      events: {
+        Row: {
+          connector_id: string
+          created_at: string
+          data: Json
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id: string
+          occurred_at: string
+          property_id: string
+          raw_event_id: string | null
+          room_id: string | null
+          source_system: string
+          source_vendor: string
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          data?: Json
+          entity_id: string
+          entity_type: string
+          event_type: string
+          id?: string
+          occurred_at: string
+          property_id: string
+          raw_event_id?: string | null
+          room_id?: string | null
+          source_system: string
+          source_vendor: string
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          data?: Json
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          property_id?: string
+          raw_event_id?: string | null
+          room_id?: string | null
+          source_system?: string
+          source_vendor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_raw_event_id_fkey"
+            columns: ["raw_event_id"]
+            isOneToOne: false
+            referencedRelation: "raw_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hotel_events: {
         Row: {
@@ -105,6 +238,62 @@ export type Database = {
           value?: number | null
         }
         Relationships: []
+      }
+      hotel_signup_requests: {
+        Row: {
+          approved_property_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          hotel_name: string
+          id: string
+          requested_connectors: Json
+          requester_user_id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_property_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          hotel_name: string
+          id?: string
+          requested_connectors?: Json
+          requester_user_id: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_property_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          hotel_name?: string
+          id?: string
+          requested_connectors?: Json
+          requester_user_id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel_signup_requests_approved_property_id_fkey"
+            columns: ["approved_property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       person_risk: {
         Row: {
@@ -212,6 +401,109 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      property_memberships: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_memberships_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raw_events: {
+        Row: {
+          connector_id: string
+          dedupe_key: string
+          error: string | null
+          id: string
+          occurred_at: string | null
+          payload: Json
+          property_id: string
+          received_at: string
+          signature_valid: boolean
+          system: string
+          vendor: string
+          vendor_event_id: string | null
+        }
+        Insert: {
+          connector_id: string
+          dedupe_key: string
+          error?: string | null
+          id?: string
+          occurred_at?: string | null
+          payload: Json
+          property_id: string
+          received_at?: string
+          signature_valid?: boolean
+          system: string
+          vendor: string
+          vendor_event_id?: string | null
+        }
+        Update: {
+          connector_id?: string
+          dedupe_key?: string
+          error?: string | null
+          id?: string
+          occurred_at?: string | null
+          payload?: Json
+          property_id?: string
+          received_at?: string
+          signature_valid?: boolean
+          system?: string
+          vendor?: string
+          vendor_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raw_events_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_risk: {
         Row: {
           last_updated: string
@@ -264,10 +556,7 @@ export type Database = {
         }
         Returns: number
       }
-      try_parse_timestamptz: {
-        Args: { p_text: string }
-        Returns: string
-      }
+      try_parse_timestamptz: { Args: { p_text: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -279,6 +568,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -310,14 +600,119 @@ export type Tables<
       : never
     : never
 
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+
 // Convenience row types
 export type RoomRiskRow = Tables<"room_risk">
 export type AlertRow = Tables<"alerts">
 export type HotelEventRow = Tables<"hotel_events">
 export type CvEventRow = Tables<"cv_events">
 export type PersonRow = Tables<"persons">
+export type ProfileRow = Tables<"profiles">
 export type PersonRiskRow = Tables<"person_risk">
 export type PersonRoomHistoryRow = Tables<"person_room_history">
+
+// Convenience insert/update types
+export type RoomRiskInsert = TablesInsert<"room_risk">
+export type RoomRiskUpdate = TablesUpdate<"room_risk">
+export type AlertInsert = TablesInsert<"alerts">
+export type AlertUpdate = TablesUpdate<"alerts">
+
+// Display-layer type used by alert UIs for deduped "current room alert" views.
+export type CurrentAlertedRoom = {
+  room_id: AlertRow["room_id"]
+  latest_alert: AlertRow
+  alert_count: number
+  max_risk_score: AlertRow["risk_score"]
+}
 
 // Signal weights as defined in the PRD
 export const SIGNAL_WEIGHTS = {

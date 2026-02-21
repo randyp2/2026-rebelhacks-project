@@ -51,27 +51,28 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
-  const pathname = request.nextUrl.pathname;
+  } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
 
   // Redirect unauthenticated users away from /dashboard
   if (!user && pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/", request.url);
-    const redirectResponse = NextResponse.redirect(loginUrl);
+    const loginUrl = new URL("/", request.url)
+    const redirectResponse = NextResponse.redirect(loginUrl)
     for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
+      redirectResponse.cookies.set(cookie)
     }
-    return redirectResponse;
+    return redirectResponse
   }
 
   // Redirect authenticated users away from login page
   if (user && pathname === "/") {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    const redirectResponse = NextResponse.redirect(dashboardUrl);
+    const dashboardUrl = new URL("/dashboard", request.url)
+    const redirectResponse = NextResponse.redirect(dashboardUrl)
     for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie);
+      redirectResponse.cookies.set(cookie)
     }
-    return redirectResponse;
+    return redirectResponse
   }
 
   return response;

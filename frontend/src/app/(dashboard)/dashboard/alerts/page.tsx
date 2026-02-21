@@ -1,5 +1,3 @@
-// TODO: Implement the Alerts page
-//
 // Full-page view of the alerts feed with filtering and sorting.
 //
 // Features:
@@ -10,29 +8,20 @@
 //   - Export to CSV button (TODO: implement client-side CSV download)
 //
 // Server component:
-//   1. Authenticate user
-//   2. Fetch initial alerts via getRecentAlerts(supabase, 25)
-//   3. Pass to <AlertFeed> which handles realtime additions client-side
-
+//   1. Fetch recent alert rows.
+//   2. Render a table of currently alerted rooms (latest alert per room).
+import { UltraQualityDataTable } from "@/components/ui/ultra-quality-data-table"
+import { getRecentAlerts } from "@/lib/supabase/queries"
 import { createServerSupabaseClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
 
 export default async function AlertsPage() {
   const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (!user || error) redirect("/")
-
-  // TODO: const alerts = await getRecentAlerts(supabase, 25)
+  const alerts = await getRecentAlerts(supabase, 500).catch(() => [])
 
   return (
     <div className="p-4">
       <h1 className="mb-4 text-2xl font-bold">Alerts</h1>
-      {/* TODO: filter controls */}
-      {/* TODO: <AlertFeed initialAlerts={alerts} /> */}
+      <UltraQualityDataTable alerts={alerts} />
     </div>
   )
 }

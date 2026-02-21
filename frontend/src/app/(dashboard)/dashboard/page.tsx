@@ -1,44 +1,34 @@
 /**
  * DashboardPage
  *
- * Currently running in DEMO MODE — uses local placeholder data.
- *
- * TODO: restore Supabase auth + data fetching:
- *   1. Uncomment the auth block below
- *   2. Replace MOCK_ROOMS / MOCK_ALERTS with getRoomRisks / getRecentAlerts
- *   3. Delete src/lib/mockData.ts once Supabase tables are populated
+ * 1. Fetches initial room risks + recent alerts server-side (fast first paint).
+ * 2. Passes optional user profile info for header display when available.
+ * 3. Hands data to DashboardClient which manages all interactivity.
  */
 
-// TODO (step 1): uncomment when Supabase auth is ready
-// import { redirect } from "next/navigation"
-// import { createServerSupabaseClient } from "@/utils/supabase/server"
-// import { getRoomRisks, getRecentAlerts } from "@/lib/supabase/queries"
-
+import { createServerSupabaseClient } from "@/utils/supabase/server"
+import { getRoomRisks, getRecentAlerts } from "@/lib/supabase/queries"
+import Header from "@/components/layout/Header"
 import DashboardClient from "@/components/dashboard/DashboardClient"
 import Header from "@/components/layout/Header"
 import { MOCK_ALERTS, MOCK_ROOMS } from "@/lib/mockData"
 
 export default async function DashboardPage() {
-  // TODO (step 1): replace mock data block with this once Supabase is wired up:
-  //
-  // const supabase = await createServerSupabaseClient()
-  // const { data: { user }, error } = await supabase.auth.getUser()
-  // if (!user || error) redirect("/")
-  //
-  // const [rooms, alerts] = await Promise.all([
-  //   getRoomRisks(supabase).catch(() => []),
-  //   getRecentAlerts(supabase).catch(() => []),
-  // ])
-  //
-  // const userFullName = (user.user_metadata?.full_name as string) ?? user.email ?? null
-  // const oneHourAgo = Date.now() - 3_600_000
-  // const recentAlertCount = alerts.filter(
-  //   (a) => new Date(a.timestamp).getTime() > oneHourAgo
-  // ).length
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const rooms = MOCK_ROOMS
-  const alerts = MOCK_ALERTS
-  const userFullName = "Demo User"
+  // Parallel fetch — both queries run concurrently
+  const [rooms, alerts] = await Promise.all([
+    getRoomRisks(supabase).catch(() => []),
+    getRecentAlerts(supabase).catch(() => []),
+  ])
+
+  const userFullName =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? null
+
+  // Use loaded alerts count for the notification badge.
   const recentAlertCount = alerts.length
 
   return (

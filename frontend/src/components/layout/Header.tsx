@@ -31,16 +31,14 @@ export default function Header({
 				.toUpperCase()
 		: "?";
 
-	return (
-		<header className="flex h-14 shrink-0 items-center justify-between border-b border-white/8 bg-[#080d14] px-6">
-			{/* Page title */}
-			<div className="flex items-center gap-2">
-				<span className="text-[10px] uppercase tracking-widest text-slate-500">
-					HotelGuard
-				</span>
-				<span className="text-slate-600">/</span>
-				<h1 className="text-sm font-semibold text-slate-200">{title}</h1>
-			</div>
+  return (
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/8 bg-[#080d14] px-6">
+      {/* Page title */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] uppercase tracking-widest text-slate-500">HG</span>
+        <span className="text-slate-600">/</span>
+        <h1 className="text-sm font-semibold text-slate-200">{title}</h1>
+      </div>
 
 			<div className="flex items-center gap-4">
 				{/* Alert bell */}
