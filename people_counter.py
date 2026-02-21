@@ -22,9 +22,15 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
+import subprocess
+import sys
+import time
+from uuid import uuid4
 
 import cv2
 import numpy as np
+import requests
 from ultralytics import YOLO
 
 # ADJUST RED LINE HERE 
@@ -256,6 +262,59 @@ def crossing_direction(prev_side: int, curr_side: int) -> str | None:
     return None
 
 
+def check_room_high_risk(
+    session: requests.Session,
+    api_base_url: str,
+    cv_api_key: str,
+    room_id: str,
+    timeout_seconds: int,
+) -> dict:
+    url = f"{api_base_url.rstrip('/')}/api/cv/room-risk"
+    response = session.post(
+        url,
+        headers={"x-cv-api-key": cv_api_key},
+        json={"room_id": room_id},
+        timeout=timeout_seconds,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict):
+        raise RuntimeError("Invalid response payload from /api/cv/room-risk")
+    return payload
+
+
+def current_video_seconds(cap: cv2.VideoCapture, frame_index: int, fps: float) -> float:
+    pos_msec = cap.get(cv2.CAP_PROP_POS_MSEC)
+    if pos_msec and pos_msec > 0:
+        return pos_msec / 1000.0
+    if fps > 0:
+        return float(frame_index) / float(fps)
+    return 0.0
+
+
+def launch_uploader_clip(
+    uploader_python: str,
+    uploader_script: str,
+    source_video: str,
+    room_id: str,
+    cv_api_key: str,
+    next_api_base_url: str,
+    start_offset_seconds: float,
+    duration_seconds: float,
+) -> int:
+    env = os.environ.copy()
+    env["CAMERA_SOURCE"] = source_video
+    env["ROOM_ID"] = room_id
+    env["CV_API_KEY"] = cv_api_key
+    env["NEXT_API_BASE_URL"] = next_api_base_url.rstrip("/")
+    env["START_OFFSET_SECONDS"] = f"{max(0.0, start_offset_seconds):.3f}"
+    env["MAX_DURATION_SECONDS"] = f"{max(0.1, duration_seconds):.3f}"
+    env["VIDEO_ID"] = f"vid_entry_{int(time.time())}_{uuid4().hex[:8]}"
+
+    proc = subprocess.run([uploader_python, uploader_script], env=env, check=False)
+    return int(proc.returncode)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Detect and track people in a video.")
     parser.add_argument("--video", required=True, help="Path to input video file")
@@ -430,13 +489,76 @@ def parse_args() -> argparse.Namespace:
         "--save",
         help="Optional output path for annotated video (e.g. out.mp4)",
     )
+    parser.add_argument(
+        "--room-id",
+        default=os.getenv("ROOM_ID", "").strip(),
+        help="Room identifier sent to /api/cv/room-risk on each entry event",
+    )
+    parser.add_argument(
+        "--next-api-base-url",
+        default=os.getenv("NEXT_API_BASE_URL", "http://localhost:3000"),
+        help="Next.js base URL hosting /api/cv/room-risk",
+    )
+    parser.add_argument(
+        "--cv-api-key",
+        default=os.getenv("CV_API_KEY", ""),
+        help="API key sent as x-cv-api-key to /api/cv/room-risk",
+    )
+    parser.add_argument(
+        "--risk-timeout-seconds",
+        type=int,
+        default=10,
+        help="Timeout for /api/cv/room-risk requests",
+    )
+    parser.add_argument(
+        "--upload-delay-seconds",
+        type=float,
+        default=10.0,
+        help="Wait this long after high-risk entry before launching uploader",
+    )
+    parser.add_argument(
+        "--upload-duration-seconds",
+        type=float,
+        default=10.0,
+        help="Clip duration uploaded by uploader.py starting from entry time",
+    )
+    parser.add_argument(
+        "--max-upload-triggers",
+        type=int,
+        default=1,
+        help="Maximum number of high-risk uploader launches per run",
+    )
+    parser.add_argument(
+        "--uploader-script",
+        default="cv/uploader.py",
+        help="Path to uploader.py script",
+    )
+    parser.add_argument(
+        "--uploader-python",
+        default=sys.executable,
+        help="Python executable used to run uploader.py",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    if not args.room_id:
+        raise ValueError("Missing room id. Pass --room-id or set ROOM_ID.")
+    if not args.cv_api_key:
+        raise ValueError("Missing CV API key. Pass --cv-api-key or set CV_API_KEY.")
+    if int(args.risk_timeout_seconds) <= 0:
+        raise ValueError("--risk-timeout-seconds must be > 0")
+    if float(args.upload_delay_seconds) < 0:
+        raise ValueError("--upload-delay-seconds must be >= 0")
+    if float(args.upload_duration_seconds) <= 0:
+        raise ValueError("--upload-duration-seconds must be > 0")
+    if int(args.max_upload_triggers) < 0:
+        raise ValueError("--max-upload-triggers must be >= 0")
 
     model = YOLO(args.model)
+    api_base_url = args.next_api_base_url.rstrip("/")
+    session = requests.Session()
 
     cap = cv2.VideoCapture(args.video)
     if not cap.isOpened():
@@ -557,6 +679,8 @@ def main() -> None:
     smooth_foot_by_id: dict[int, tuple[float, float]] = {}
     entered = 0
     left = 0
+    uploads_started = 0
+    pending_uploads: list[dict[str, float]] = []
 
     while True:
         ok, frame = cap.read()
@@ -642,6 +766,35 @@ def main() -> None:
                             prev_zone = last_zone_by_id.get(tid_i)
                             if prev_zone == -1 and curr_zone == 1:
                                 entered += 1
+                                try:
+                                    risk = check_room_high_risk(
+                                        session=session,
+                                        api_base_url=api_base_url,
+                                        cv_api_key=args.cv_api_key,
+                                        room_id=args.room_id,
+                                        timeout_seconds=int(args.risk_timeout_seconds),
+                                    )
+                                    print(
+                                        "[room-risk] "
+                                        f"room_id={risk.get('room_id', args.room_id)} "
+                                        f"score={risk.get('risk_score')} "
+                                        f"threshold={risk.get('risk_threshold')} "
+                                        f"is_high_risk={risk.get('is_high_risk')}",
+                                    )
+                                    if bool(risk.get("is_high_risk")) and uploads_started + len(pending_uploads) < int(args.max_upload_triggers):
+                                        entry_sec = current_video_seconds(cap, frame_index, fps)
+                                        pending_uploads.append(
+                                            {
+                                                "entry_sec": entry_sec,
+                                                "fire_sec": entry_sec + float(args.upload_delay_seconds),
+                                            }
+                                        )
+                                        print(
+                                            "[uploader] scheduled "
+                                            f"entry_sec={entry_sec:.2f} fire_sec={entry_sec + float(args.upload_delay_seconds):.2f}",
+                                        )
+                                except (requests.RequestException, ValueError, RuntimeError) as err:
+                                    print(f"[room-risk] failed room_id={args.room_id}: {err}")
                             elif prev_zone == 1 and curr_zone == -1:
                                 left += 1
                             last_zone_by_id[tid_i] = curr_zone
@@ -665,6 +818,35 @@ def main() -> None:
                                 direction = crossing_direction(prev_side, curr_side)
                                 if direction == args.direction:
                                     entered += 1
+                                    try:
+                                        risk = check_room_high_risk(
+                                            session=session,
+                                            api_base_url=api_base_url,
+                                            cv_api_key=args.cv_api_key,
+                                            room_id=args.room_id,
+                                            timeout_seconds=int(args.risk_timeout_seconds),
+                                        )
+                                        print(
+                                            "[room-risk] "
+                                            f"room_id={risk.get('room_id', args.room_id)} "
+                                            f"score={risk.get('risk_score')} "
+                                            f"threshold={risk.get('risk_threshold')} "
+                                            f"is_high_risk={risk.get('is_high_risk')}",
+                                        )
+                                        if bool(risk.get("is_high_risk")) and uploads_started + len(pending_uploads) < int(args.max_upload_triggers):
+                                            entry_sec = current_video_seconds(cap, frame_index, fps)
+                                            pending_uploads.append(
+                                                {
+                                                    "entry_sec": entry_sec,
+                                                    "fire_sec": entry_sec + float(args.upload_delay_seconds),
+                                                }
+                                            )
+                                            print(
+                                                "[uploader] scheduled "
+                                                f"entry_sec={entry_sec:.2f} fire_sec={entry_sec + float(args.upload_delay_seconds):.2f}",
+                                            )
+                                    except (requests.RequestException, ValueError, RuntimeError) as err:
+                                        print(f"[room-risk] failed room_id={args.room_id}: {err}")
                                 elif direction is not None:
                                     left += 1
                                 last_side_by_id[tid_i] = curr_side
@@ -700,6 +882,35 @@ def main() -> None:
             2,
         )
 
+        if pending_uploads and uploads_started < int(args.max_upload_triggers):
+            now_sec = current_video_seconds(cap, frame_index, fps)
+            while (
+                pending_uploads
+                and uploads_started < int(args.max_upload_triggers)
+                and now_sec >= pending_uploads[0]["fire_sec"]
+            ):
+                job = pending_uploads.pop(0)
+                print(
+                    "[uploader] launching "
+                    f"entry_sec={job['entry_sec']:.2f} "
+                    f"duration={float(args.upload_duration_seconds):.2f}s"
+                )
+                rc = launch_uploader_clip(
+                    uploader_python=str(args.uploader_python),
+                    uploader_script=str(args.uploader_script),
+                    source_video=str(args.video),
+                    room_id=str(args.room_id),
+                    cv_api_key=str(args.cv_api_key),
+                    next_api_base_url=str(args.next_api_base_url),
+                    start_offset_seconds=float(job["entry_sec"]),
+                    duration_seconds=float(args.upload_duration_seconds),
+                )
+                uploads_started += 1
+                if rc == 0:
+                    print(f"[uploader] completed trigger={uploads_started}")
+                else:
+                    print(f"[uploader] failed trigger={uploads_started} return_code={rc}")
+
         if args.show:
             show_frame = frame
             if display_scale != 1.0:
@@ -724,6 +935,7 @@ def main() -> None:
                 frame_index += 1
 
     cap.release()
+    session.close()
     if writer is not None:
         writer.release()
     cv2.destroyAllWindows()
