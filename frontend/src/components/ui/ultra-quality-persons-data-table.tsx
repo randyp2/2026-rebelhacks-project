@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { formatRiskScore } from "@/lib/risk/scoring"
+import { formatRiskScore, getRiskColor, getRiskLevel, type RiskLevel } from "@/lib/risk/scoring"
 import {
   Pagination,
   PaginationContent,
@@ -25,14 +25,17 @@ type UltraQualityPersonsDataTableProps = {
   persons: PersonWithRiskRow[]
 }
 
+type NormalizedRiskLevel = RiskLevel | "unknown"
+
 type EnrichedPerson = PersonWithRiskRow & {
-  normalizedRiskLevel: "low" | "medium" | "high" | "unknown"
+  normalizedRiskLevel: NormalizedRiskLevel
   currentRoomsCount: number
   bookings30d: number | null
   trafficEntries30d: number | null
 }
 
-const RISK_LEVEL_ORDER: Record<EnrichedPerson["normalizedRiskLevel"], number> = {
+const RISK_LEVEL_ORDER: Record<NormalizedRiskLevel, number> = {
+  critical: 4,
   high: 3,
   medium: 2,
   low: 1,
@@ -62,21 +65,22 @@ function readBreakdownMetric(
   return parseNumeric(raw[key])
 }
 
-function normalizeRiskLevel(level: string | null): EnrichedPerson["normalizedRiskLevel"] {
+function normalizeRiskLevel(score: number | null, level: string | null): NormalizedRiskLevel {
+  if (score !== null && Number.isFinite(score)) return getRiskLevel(score)
   if (!level) return "unknown"
   const lowered = level.toLowerCase()
+  if (lowered === "critical") return "critical"
+  if (lowered === "very_high" || lowered === "very high") return "critical"
   if (lowered === "high" || lowered === "medium" || lowered === "low") return lowered
   return "unknown"
 }
 
-function getRiskLevelClass(level: EnrichedPerson["normalizedRiskLevel"]) {
-  if (level === "high") return "text-red-400"
-  if (level === "medium") return "text-yellow-400"
-  if (level === "low") return "text-emerald-400"
-  return "text-muted-foreground"
+function getRiskLevelClass(level: NormalizedRiskLevel) {
+  if (level === "unknown") return "text-muted-foreground"
+  return getRiskColor(level)
 }
 
-function formatRiskLevel(level: EnrichedPerson["normalizedRiskLevel"]) {
+function formatRiskLevel(level: NormalizedRiskLevel) {
   if (level === "unknown") return "Unknown"
   return level.charAt(0).toUpperCase() + level.slice(1)
 }
@@ -109,7 +113,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
     return persons.map((person) => {
       return {
         ...person,
-        normalizedRiskLevel: normalizeRiskLevel(person.risk_level),
+        normalizedRiskLevel: normalizeRiskLevel(person.risk_score ?? null, person.risk_level),
         currentRoomsCount: person.current_rooms.length,
         bookings30d: readBreakdownMetric(person.score_breakdown, "bookings_30d"),
         trafficEntries30d: readBreakdownMetric(person.score_breakdown, "traffic_entries_30d"),

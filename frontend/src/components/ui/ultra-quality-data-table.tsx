@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { formatRiskScore, getRiskColor, getRiskLevel } from "@/lib/risk/scoring"
+import { parseAlertExplanation } from "@/lib/risk/explanations"
 import {
   Pagination,
   PaginationContent,
@@ -191,6 +192,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
               paginated.map((alert) => {
                 const riskLevel = getRiskLevel(alert.risk_score)
                 const riskColor = getRiskColor(riskLevel)
+                const parsedExplanation = parseAlertExplanation(alert.explanation)
 
                 return (
                   <tr key={alert.id} className="transition-colors hover:bg-accent/50">
@@ -209,7 +211,16 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
                       {new Date(alert.timestamp).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {alert.explanation ?? "No explanation provided"}
+                      <div className="space-y-1">
+                        <p className="text-foreground/90">{parsedExplanation.summary}</p>
+                        {parsedExplanation.details.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {parsedExplanation.details.map((line, index) => (
+                              <div key={`${alert.id}-detail-${index}`}>{line}</div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

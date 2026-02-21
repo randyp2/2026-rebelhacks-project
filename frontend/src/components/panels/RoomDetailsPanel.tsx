@@ -13,6 +13,7 @@ import {
   getRiskColor,
   formatRiskScore,
 } from "@/lib/risk/scoring"
+import { parseAlertExplanation } from "@/lib/risk/explanations"
 import type { EnrichedRoom } from "@/hooks/useRoomRisk"
 import type { AlertRow } from "@/types/database"
 
@@ -22,6 +23,7 @@ type RoomDetailsPanelProps = {
   tiedPeople: {
     name: string
     riskLevel: string | null
+    riskScore: number | null
   }[]
   onClose: () => void
 }
@@ -34,17 +36,6 @@ function timeAgo(ts: string): string {
   const h = Math.floor(m / 60)
   if (h < 24) return `${h}h ago`
   return `${Math.floor(h / 24)}d ago`
-}
-
-function normalizeExplanation(explanation: string | null): string | null {
-  if (!explanation) return explanation
-  if (!explanation.includes("Room risk threshold")) return explanation
-
-  const firstPeriodIndex = explanation.indexOf(".")
-  if (firstPeriodIndex === -1) return explanation
-
-  const normalized = explanation.slice(firstPeriodIndex + 1).trim()
-  return normalized.length > 0 ? normalized : explanation
 }
 
 export default function RoomDetailsPanel({
@@ -60,21 +51,31 @@ export default function RoomDetailsPanel({
 
   const level = getRiskLevel(room.risk_score)
   const levelColor = getRiskColor(level)
-  const formatPersonRiskLevel = (riskLevel: string | null): string =>
-    riskLevel ? riskLevel.replace(/_/g, " ").toUpperCase() : "UNKNOWN"
-  const getPersonRiskBadgeClass = (riskLevel: string | null): string => {
+  const resolvePersonRiskLevel = (riskScore: number | null, riskLevel: string | null) => {
+    if (riskScore !== null && Number.isFinite(riskScore)) return getRiskLevel(riskScore)
     const normalized = riskLevel?.toUpperCase() ?? ""
+    if (normalized === "VERY_HIGH") return "critical"
+    if (normalized === "CRITICAL") return "critical"
+    if (normalized === "HIGH") return "high"
+    if (normalized === "MEDIUM") return "medium"
+    if (normalized === "LOW") return "low"
+    return "unknown"
+  }
 
-    if (normalized === "CRITICAL" || normalized === "VERY_HIGH") {
+  const formatPersonRiskLevel = (level: string): string =>
+    level === "unknown" ? "UNKNOWN" : level.toUpperCase()
+
+  const getPersonRiskBadgeClass = (level: string): string => {
+    if (level === "critical") {
       return "text-red-200 bg-red-500/20 border border-red-400/40"
     }
-    if (normalized === "HIGH") {
+    if (level === "high") {
       return "text-orange-200 bg-orange-500/20 border border-orange-400/40"
     }
-    if (normalized === "MEDIUM") {
+    if (level === "medium") {
       return "text-amber-200 bg-amber-500/20 border border-amber-400/40"
     }
-    if (normalized === "LOW") {
+    if (level === "low") {
       return "text-emerald-200 bg-emerald-500/20 border border-emerald-400/40"
     }
     return "text-foreground bg-accent/40 border border-border"
@@ -138,19 +139,28 @@ export default function RoomDetailsPanel({
               People Tied to Room
             </p>
             <ul className="space-y-1.5">
-              {tiedPeople.map((person) => (
-                <li
-                  key={person.name}
-                  className="flex items-center justify-between rounded-md border border-border bg-accent/50 px-2.5 py-2"
-                >
-                  <span className="text-sm font-bold text-foreground">{person.name}</span>
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${getPersonRiskBadgeClass(person.riskLevel)}`}
+              {tiedPeople.map((person) => {
+                const resolvedLevel = resolvePersonRiskLevel(
+                  person.riskScore,
+                  person.riskLevel
+                )
+
+                return (
+                  <li
+                    key={person.name}
+                    className="flex items-center justify-between rounded-md border border-border bg-accent/50 px-2.5 py-2"
                   >
-                    {formatPersonRiskLevel(person.riskLevel)}
-                  </span>
-                </li>
-              ))}
+                    <span className="text-sm font-bold text-foreground">{person.name}</span>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${getPersonRiskBadgeClass(
+                        resolvedLevel
+                      )}`}
+                    >
+                      {formatPersonRiskLevel(resolvedLevel)}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
@@ -168,7 +178,7 @@ export default function RoomDetailsPanel({
               {roomAlerts.map((alert) => {
                 const aLevel = getRiskLevel(alert.risk_score)
                 const aColor = getRiskColor(aLevel)
-                const explanation = normalizeExplanation(alert.explanation)
+                const explanation = parseAlertExplanation(alert.explanation)
                 return (
                   <li
                     key={alert.id}
@@ -180,9 +190,9 @@ export default function RoomDetailsPanel({
                       </span>
                       <span className="text-muted-foreground">{timeAgo(alert.timestamp)}</span>
                     </div>
-                    {explanation && (
-                      <p className="text-muted-foreground leading-snug">{explanation}</p>
-                    )}
+                    <p className="text-muted-foreground leading-snug">
+                      {explanation.summary}
+                    </p>
                   </li>
                 )
               })}
