@@ -458,7 +458,7 @@ export default function VideoAlertsSection({
 									</div>
 
 									<div className="mt-3">
-										<details className="rounded border border-border bg-muted/20 px-3 py-2">
+										<details open className="rounded border border-border bg-muted/20 px-3 py-2">
 											<summary className="cursor-pointer select-none text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
 												Key Frames ({keyFrames.length})
 											</summary>
