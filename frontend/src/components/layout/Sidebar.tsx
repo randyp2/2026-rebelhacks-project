@@ -10,7 +10,6 @@
 
 import {
 	Bell,
-	Hotel,
 	LayoutDashboard,
 	LogOut,
 	Settings,
@@ -22,7 +21,6 @@ import { usePathname, useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
 	{ href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-	{ href: "/dashboard/rooms", label: "Rooms", icon: Hotel, exact: false },
 	{ href: "/dashboard/alerts", label: "Alerts", icon: Bell, exact: false },
 	{ href: "/dashboard/persons", label: "Persons", icon: Users, exact: false },
 	{
