@@ -43,6 +43,7 @@ type Props = {
 		{
 			name: string;
 			riskLevel: string | null;
+			riskScore: number | null;
 		}[]
 	>;
 };

@@ -10,6 +10,7 @@
 import { useMemo } from "react"
 import RoomTile from "./RoomTile"
 import { getRiskHexColor } from "@/lib/riskColor"
+import { formatRiskScore } from "@/lib/risk/scoring"
 import type { EnrichedRoom } from "@/hooks/useRoomRisk"
 
 type FloorHeatmapProps = {
@@ -21,10 +22,10 @@ type FloorHeatmapProps = {
 }
 
 const LEGEND = [
-  { label: "Low",      score: 2  },
-  { label: "Medium",   score: 10 },
-  { label: "High",     score: 20 },
-  { label: "Critical", score: 30 },
+  { label: "Low",      score: 20 },
+  { label: "Medium",   score: 40 },
+  { label: "High",     score: 65 },
+  { label: "Critical", score: 85 },
 ] as const
 const CLUSTER_SIZE = 5
 
@@ -88,7 +89,7 @@ export default function FloorHeatmap({
     const firstId = Array.from(hottestRoomIds)[0]
     if (!firstId) return null
     const room = roomById.get(firstId)
-    return room ? `Room ${room.room_id} (${room.risk_score.toFixed(1)})` : null
+    return room ? `Room ${room.room_id} (${formatRiskScore(room.risk_score)})` : null
   }, [hottestRoomIds, roomById])
 
   const hottestClusterSummary = useMemo(() => {
@@ -96,7 +97,7 @@ export default function FloorHeatmap({
     const ids = Array.from(hottestCluster.roomIds).sort((a, b) => Number(a) - Number(b))
     const first = ids[0]
     const last = ids[ids.length - 1]
-    return `${first}-${last} (${hottestCluster.averageRisk.toFixed(1)} avg)`
+    return `${first}-${last} (${formatRiskScore(hottestCluster.averageRisk)} avg)`
   }, [hottestCluster])
 
   return (

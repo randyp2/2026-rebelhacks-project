@@ -27,6 +27,7 @@ function DashboardFallback() {
 type TiedPerson = {
 	name: string;
 	riskLevel: PersonWithRiskRow["risk_level"];
+	riskScore: PersonWithRiskRow["risk_score"];
 };
 
 function buildRoomToPeople(persons: PersonWithRiskRow[]): Record<string, TiedPerson[]> {
@@ -41,6 +42,7 @@ function buildRoomToPeople(persons: PersonWithRiskRow[]): Record<string, TiedPer
 			roomToPeopleByName.get(roomId)?.set(person.full_name, {
 				name: person.full_name,
 				riskLevel: person.risk_level,
+				riskScore: person.risk_score,
 			});
 		}
 	}

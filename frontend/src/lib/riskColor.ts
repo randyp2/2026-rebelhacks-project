@@ -5,28 +5,29 @@
  * Used by both the Three.js 3D floor meshes and the 2D CSS heatmap tiles
  * so the color mapping is always consistent.
  *
- * Gradient stops (score 0 → 30+):
+ * Gradient stops (score 0 → 100):
  *   0   → emerald-500  #10b981
- *   10  → yellow-400   #facc15
- *   20  → orange-500   #f97316
- *   30+ → red-500      #ef4444
+ *   40  → yellow-400   #facc15
+ *   65  → orange-500   #f97316
+ *   85+ → red-500      #ef4444
  */
 
 type GradientStop = { t: number; r: number; g: number; b: number }
 
 const STOPS: GradientStop[] = [
   { t: 0,    r: 16,  g: 185, b: 129 }, // emerald-500
-  { t: 0.33, r: 250, g: 204, b: 21  }, // yellow-400
-  { t: 0.66, r: 249, g: 115, b: 22  }, // orange-500
+  { t: 0.4,  r: 250, g: 204, b: 21  }, // yellow-400
+  { t: 0.65, r: 249, g: 115, b: 22  }, // orange-500
+  { t: 0.85, r: 239, g: 68,  b: 68  }, // red-500
   { t: 1,    r: 239, g: 68,  b: 68  }, // red-500
 ]
 
 /**
  * Returns a CSS hex color string interpolated across a green→yellow→orange→red
- * gradient for scores in the range [0, 30].  Scores above 30 clamp to red.
+ * gradient for scores in the range [0, 100]. Scores above 100 clamp to red.
  */
 export function getRiskHexColor(score: number): string {
-  const t = Math.min(1, Math.max(0, score / 30))
+  const t = Math.min(1, Math.max(0, score / 100))
 
   // Find the two bounding stops
   let lo = STOPS[0]

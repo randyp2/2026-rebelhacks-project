@@ -5,6 +5,7 @@ import { RotateCcw, ArrowUpRight, Bell } from "lucide-react"
 import { motion, type Transition } from "motion/react"
 import { useRouter } from "next/navigation"
 import { formatRiskScore, getRiskLevel } from "@/lib/risk/scoring"
+import { parseAlertExplanation } from "@/lib/risk/explanations"
 import type { AlertRow } from "@/types/database"
 
 type NotificationListProps = {
@@ -70,17 +71,6 @@ function truncateText(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength)}...`
 }
 
-function normalizeExplanation(explanation: string | null): string | null {
-  if (!explanation) return explanation
-  if (!explanation.includes("Room risk threshold")) return explanation
-
-  const firstPeriodIndex = explanation.indexOf(".")
-  if (firstPeriodIndex === -1) return explanation
-
-  const normalized = explanation.slice(firstPeriodIndex + 1).trim()
-  return normalized.length > 0 ? normalized : explanation
-}
-
 function toNotificationItems(alerts: AlertRow[], maxItems: number): NotificationItem[] {
   const roomCounts = new Map<string, number>()
   for (const alert of alerts) {
@@ -90,7 +80,7 @@ function toNotificationItems(alerts: AlertRow[], maxItems: number): Notification
 
   return alerts.slice(0, maxItems).map((alert) => {
     const roomKey = alert.room_id ?? `unassigned:${alert.id}`
-    const normalizedExplanation = normalizeExplanation(alert.explanation)
+    const normalizedExplanation = parseAlertExplanation(alert.explanation).summary
     return {
       id: alert.id,
       title: alert.room_id ? `Room ${alert.room_id}` : "Unassigned room",
