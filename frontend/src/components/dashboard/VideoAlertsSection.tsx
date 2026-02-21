@@ -313,6 +313,7 @@ export default function VideoAlertsSection({
 							const label = summary.overall_risk_level.toUpperCase()
 							const associatedRoomId = resolveAssociatedRoomId(summary, evidenceRows)
 							const actionItems = splitSentences(summary.recommended_action)
+							const summarySentences = splitSentences(summary.video_summary)
 							const keyFrames = evidenceRows
 								.filter((row) => row.video_id === summary.video_id)
 								.filter((row) => (associatedRoomId ? row.room_id === associatedRoomId : true))
@@ -320,17 +321,17 @@ export default function VideoAlertsSection({
 								.slice(0, 3)
 
 						return (
-							<article
-								key={summary.video_id}
-								className={[
-									"rounded-lg border border-l-2 border-border bg-card p-4 transition-colors",
-									risk.leftBorder,
-									risk.cardBg,
-								].join(" ")}
-							>
+								<article
+									key={summary.video_id}
+									className={[
+										"rounded-lg border border-l-2 border-border bg-card p-4 shadow-sm transition-colors",
+										risk.leftBorder,
+										risk.cardBg,
+									].join(" ")}
+								>
 								{/* Header row */}
-								<div className="mb-3 flex items-start justify-between gap-3">
-									<div className="flex min-w-0 flex-1 items-center gap-2">
+									<div className="mb-3 flex items-start justify-between gap-3">
+										<div className="flex min-w-0 flex-1 items-center gap-2">
 										{/* Severity dot — pulses for high risk */}
 										<span className="relative flex h-2 w-2 shrink-0">
 											{risk.pulse && (
@@ -342,64 +343,75 @@ export default function VideoAlertsSection({
 												className={`relative inline-flex h-2 w-2 rounded-full ${risk.dot}`}
 											/>
 										</span>
-										<p className="truncate font-mono text-[11px] text-muted-foreground">
-											{summary.video_id}
-										</p>
-									</div>
+											<p className="truncate font-mono text-[11px] text-muted-foreground">
+												{summary.video_id}
+											</p>
+										</div>
 									<span
 										className={`inline-flex shrink-0 items-center gap-1 rounded border px-2 py-0.5 text-[11px] font-semibold tracking-wide ${risk.badge}`}
 									>
 										<ShieldAlert className="h-3 w-3" />
 										{label}
 									</span>
-								</div>
+									</div>
 
-									{/* Summary narrative */}
-									<div className="mb-2">
-										{associatedRoomId ? (
-											<span className="inline-flex items-center rounded border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-300">
-												Room {associatedRoomId}
-											</span>
-										) : (
-											<span className="inline-flex items-center rounded border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
-												Room unassigned
+										{/* Summary narrative */}
+										<div className="mb-2">
+											{associatedRoomId ? (
+												<span className="inline-flex items-center rounded border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-300">
+													Room {associatedRoomId}
+												</span>
+											) : (
+												<span className="inline-flex items-center rounded border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
+													Room unassigned
 											</span>
 										)}
 									</div>
 
 									{/* Summary narrative */}
-									<p className="mb-3 text-xs leading-relaxed text-foreground/80">
-										{summary.video_summary}
-									</p>
+										<div className="mb-3 rounded border border-border/70 bg-background/40 px-2.5 py-2">
+											{summarySentences.length > 0 ? (
+												<p className="text-sm leading-relaxed text-foreground/90">
+													<span className="font-semibold text-foreground">{summarySentences[0]}</span>
+													{summarySentences.slice(1).map((part, idx) => (
+														<span key={`${summary.video_id}-summary-${idx}`} className="text-foreground/80">
+															{" "}{part}
+														</span>
+													))}
+												</p>
+											) : (
+												<p className="text-sm leading-relaxed text-foreground/80">{summary.video_summary}</p>
+											)}
+										</div>
 
 								{/* Metadata chips */}
 								<div className="mb-3 flex flex-wrap items-center gap-1.5">
-									<span className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
-										<Activity className="h-3 w-3" />
-										{formatPercent(summary.overall_suspicion_score)} risk score
-									</span>
-									<span className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
-										<ScanSearch className="h-3 w-3" />
-										{summary.frame_count} frames
-									</span>
-										<span className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
-											<Clock3 className="h-3 w-3" />
-											{timeAgo(summary.updated_at)}
-									</span>
+										<span className="inline-flex items-center gap-1 rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[11px] text-cyan-200">
+											<Activity className="h-3 w-3" />
+											{formatPercent(summary.overall_suspicion_score)} risk score
+										</span>
+										<span className="inline-flex items-center gap-1 rounded border border-indigo-500/30 bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-200">
+											<ScanSearch className="h-3 w-3" />
+											{summary.frame_count} frames
+										</span>
+											<span className="inline-flex items-center gap-1 rounded border border-border/80 bg-muted/40 px-2 py-0.5 text-[11px] text-muted-foreground">
+												<Clock3 className="h-3 w-3" />
+												{timeAgo(summary.updated_at)}
+										</span>
 								</div>
 
 								{/* Pattern tags */}
-								{patterns.length > 0 && (
-									<div className="mb-3 flex flex-wrap gap-1.5">
-										{patterns.slice(0, 4).map((pattern) => (
-											<span
-												key={`${summary.video_id}-${pattern}`}
-												className="rounded border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground"
-											>
-												{pattern}
-											</span>
-										))}
-									</div>
+									{patterns.length > 0 && (
+										<div className="mb-3 flex flex-wrap gap-1.5">
+											{patterns.slice(0, 4).map((pattern) => (
+												<span
+													key={`${summary.video_id}-${pattern}`}
+													className="rounded border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground"
+												>
+													{pattern}
+												</span>
+											))}
+										</div>
 								)}
 
 									{/* Recommended action */}
@@ -433,6 +445,9 @@ export default function VideoAlertsSection({
 																	key={frame.id}
 																	className="rounded border border-border bg-background/40 px-2 py-1.5"
 																>
+																	<p className="mb-1 text-sm font-semibold text-foreground">
+																		Key Frame
+																	</p>
 																	{frame.frame_image_base64 && (
 																		<button
 																			type="button"
@@ -465,9 +480,6 @@ export default function VideoAlertsSection({
 																			{frame.analysis_summary}
 																		</p>
 																	)}
-																	<p className="truncate text-[10px] text-muted-foreground/70">
-																		{frame.storage_path}
-																	</p>
 																</div>
 															)
 														})}
