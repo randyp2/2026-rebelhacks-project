@@ -4,6 +4,18 @@ import { createServerSupabaseClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+function getSiteUrl() {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envUrl && !envUrl.includes("localhost")) {
+    return envUrl.replace(/\/$/, "");
+  }
+  // Vercel auto-injects VERCEL_URL (no protocol, no trailing slash)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return envUrl ?? "http://localhost:3000";
+}
+
 // -------------------------------------------------------------
 // lib/auth-actions.ts
 // -------------------------------------------------------------
@@ -55,7 +67,13 @@ export async function signup(formData: FormData) {
     },
   };
 
-  const { error } = await supabase.auth.signUp(data); // Call supabase auth with data
+  const { error } = await supabase.auth.signUp({
+    ...data,
+    options: {
+      ...data.options,
+      emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=/dashboard`,
+    },
+  }); // Call supabase auth with data
 
   if (error) {
     redirect("/error");
@@ -83,7 +101,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`, // where to redirect to after oauth
+      redirectTo: `${getSiteUrl()}/dashboard`, // where to redirect to after oauth
       queryParams: {
         access_type: "offline",
         prompt: "consent",
