@@ -95,35 +95,77 @@ export type PersonWithRiskRow = {
   full_name: PersonRow["full_name"]
   last_room_purchase_timestamp: PersonRow["last_room_purchase_timestamp"]
   card_history: PersonRow["card_history"]
+  current_rooms: string[]
   risk_level: PersonRiskRow["risk_level"] | null
   risk_score: number | null
   last_updated: PersonRiskRow["last_updated"] | null
   score_breakdown: PersonRiskRow["score_breakdown"] | null
 }
 
+function extractCurrentRooms(historyRows: PersonRoomHistoryRow[]): string[] {
+  const latestByRoomId = new Map<string, number>()
+
+  for (const row of historyRows) {
+    if (!Array.isArray(row.room_history)) continue
+
+    for (const entry of row.room_history) {
+      if (!entry || typeof entry !== "object") continue
+
+      const roomId = "room_id" in entry && typeof entry.room_id === "string" ? entry.room_id : null
+      if (!roomId) continue
+
+      const timestamp =
+        "timestamp" in entry && typeof entry.timestamp === "string"
+          ? Date.parse(entry.timestamp)
+          : Number.NaN
+      const sortableTimestamp = Number.isFinite(timestamp) ? timestamp : 0
+
+      const existing = latestByRoomId.get(roomId) ?? -1
+      if (sortableTimestamp > existing) {
+        latestByRoomId.set(roomId, sortableTimestamp)
+      }
+    }
+  }
+
+  return Array.from(latestByRoomId.entries())
+    .sort((left, right) => right[1] - left[1])
+    .map(([roomId]) => roomId)
+}
+
 /** Persons merged with risk profile metadata. */
 export async function getPersonsWithRisk(client: TypedClient): Promise<PersonWithRiskRow[]> {
-  const [personsResult, risksResult] = await Promise.all([
+  const [personsResult, risksResult, roomHistoryResult] = await Promise.all([
     client.from("persons").select("*").order("full_name", { ascending: true }),
     client.from("person_risk").select("*"),
+    client.from("person_room_history").select("*"),
   ])
 
   if (personsResult.error) throw personsResult.error
   if (risksResult.error) throw risksResult.error
+  if (roomHistoryResult.error) throw roomHistoryResult.error
 
   const risksByPersonId = new Map<string, PersonRiskRow>()
   for (const risk of risksResult.data ?? []) {
     risksByPersonId.set(risk.person_id, risk)
   }
 
+  const roomHistoryByPersonId = new Map<string, PersonRoomHistoryRow[]>()
+  for (const historyRow of roomHistoryResult.data ?? []) {
+    const existingRows = roomHistoryByPersonId.get(historyRow.person_id) ?? []
+    existingRows.push(historyRow)
+    roomHistoryByPersonId.set(historyRow.person_id, existingRows)
+  }
+
   return (personsResult.data ?? [])
     .map((person) => {
       const risk = risksByPersonId.get(person.id)
+      const currentRooms = extractCurrentRooms(roomHistoryByPersonId.get(person.id) ?? [])
       return {
         id: person.id,
         full_name: person.full_name,
         last_room_purchase_timestamp: person.last_room_purchase_timestamp,
         card_history: person.card_history,
+        current_rooms: currentRooms,
         risk_level: risk?.risk_level ?? null,
         risk_score: risk ? Number(risk.risk_score) : null,
         last_updated: risk?.last_updated ?? null,
