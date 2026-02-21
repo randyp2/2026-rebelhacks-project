@@ -105,14 +105,14 @@ export default function FloorHeatmap({
       <div className="mb-3 flex items-center gap-2">
         <span className="text-sm font-semibold text-foreground">Floor {floor}</span>
         <span className="text-xs text-muted-foreground">— {rooms.length} rooms</span>
-        <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">
+        <span className="ml-auto text-[11px] text-muted-foreground uppercase tracking-wider">
           Click room for details
         </span>
         {onMinimize && (
           <button
             type="button"
             onClick={onMinimize}
-            className="rounded border border-border px-2 py-0.5 text-[10px] text-foreground/90 transition hover:bg-accent"
+            className="rounded border border-border px-2.5 py-1 text-[11px] text-foreground/90 transition hover:bg-accent"
           >
             Minimize
           </button>
@@ -135,7 +135,7 @@ export default function FloorHeatmap({
       {sorted.length > 0 ? (
         <div
           className="grid gap-2"
-          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(68px, 1fr))" }}
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(64px, 1fr))" }}
         >
           {sorted.map((room) => (
             <RoomTile
