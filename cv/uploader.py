@@ -40,6 +40,9 @@ JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", "75"))
 POST_RETRIES = int(os.getenv("POST_RETRIES", "2"))
 RETRY_BACKOFF_SECONDS = float(os.getenv("RETRY_BACKOFF_SECONDS", "1.5"))
 MIN_POST_INTERVAL_SECONDS = float(os.getenv("MIN_POST_INTERVAL_SECONDS", "1.0"))
+START_OFFSET_SECONDS = float(os.getenv("START_OFFSET_SECONDS", "0"))
+MAX_DURATION_SECONDS_RAW = os.getenv("MAX_DURATION_SECONDS", "").strip()
+MAX_DURATION_SECONDS = float(MAX_DURATION_SECONDS_RAW) if MAX_DURATION_SECONDS_RAW else None
 
 
 def parse_camera_source(raw: str) -> int | str:
@@ -196,6 +199,10 @@ def run_uploader() -> None:
         raise RuntimeError("BATCH_SIZE must be >= 1")
     if FLUSH_SECONDS <= 0 or FRAME_SAMPLE_SECONDS <= 0:
         raise RuntimeError("FLUSH_SECONDS and FRAME_SAMPLE_SECONDS must be > 0")
+    if START_OFFSET_SECONDS < 0:
+        raise RuntimeError("START_OFFSET_SECONDS must be >= 0")
+    if MAX_DURATION_SECONDS is not None and MAX_DURATION_SECONDS <= 0:
+        raise RuntimeError("MAX_DURATION_SECONDS must be > 0 when provided")
 
     camera_source = parse_camera_source(CAMERA_SOURCE_RAW)
     is_file_source = isinstance(camera_source, str) and os.path.isfile(camera_source)
@@ -205,12 +212,29 @@ def run_uploader() -> None:
     if not cap.isOpened():
         raise RuntimeError(f"Could not open CAMERA_SOURCE={CAMERA_SOURCE_RAW}")
 
+    if is_file_source and START_OFFSET_SECONDS > 0:
+        cap.set(cv2.CAP_PROP_POS_MSEC, START_OFFSET_SECONDS * 1000.0)
+    elif START_OFFSET_SECONDS > 0:
+        print("START_OFFSET_SECONDS ignored for non-file source")
+
+    clip_start_ms = cap.get(cv2.CAP_PROP_POS_MSEC) if is_file_source else None
+    clip_end_ms = None
+    if is_file_source and MAX_DURATION_SECONDS is not None and clip_start_ms is not None:
+        clip_end_ms = clip_start_ms + MAX_DURATION_SECONDS * 1000.0
+
     expected_posts: int | None = None
     if is_file_source:
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         if fps > 0 and total_frames > 0:
-            expected_samples = (total_frames / fps) / FRAME_SAMPLE_SECONDS
+            start_sec = 0.0
+            if clip_start_ms is not None and clip_start_ms > 0:
+                start_sec = clip_start_ms / 1000.0
+            end_sec = total_frames / fps
+            if clip_end_ms is not None:
+                end_sec = min(end_sec, clip_end_ms / 1000.0)
+            effective_seconds = max(end_sec - start_sec, 0.0)
+            expected_samples = effective_seconds / FRAME_SAMPLE_SECONDS
             expected_posts = math.ceil(expected_samples / BATCH_SIZE)
 
     print("CV uploader started")
@@ -221,6 +245,11 @@ def run_uploader() -> None:
         f"  sample={FRAME_SAMPLE_SECONDS}s batch={BATCH_SIZE} flush={FLUSH_SECONDS}s "
         f"timeout={REQUEST_TIMEOUT_SECONDS}s"
     )
+    if is_file_source:
+        print(
+            f"  clip_start_seconds={(clip_start_ms or 0.0) / 1000.0:.2f} "
+            f"clip_max_duration_seconds={MAX_DURATION_SECONDS if MAX_DURATION_SECONDS is not None else '(full)'}"
+        )
     if expected_posts is not None:
         print(f"  expected_posts={expected_posts}")
 
@@ -249,6 +278,12 @@ def run_uploader() -> None:
                         break
                     time.sleep(0.1)
                     continue
+
+                if is_file_source and clip_end_ms is not None:
+                    current_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+                    if current_ms >= clip_end_ms:
+                        print("Reached configured clip duration, flushing and exiting...")
+                        break
 
                 batch.append(build_item(frame, run_video_id))
                 now = time.time()
