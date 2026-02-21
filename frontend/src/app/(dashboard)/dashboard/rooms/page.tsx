@@ -8,22 +8,10 @@
 //   - person_room_history for guests associated with this room
 //
 // Server component:
-//   1. Authenticate user
-//   2. Fetch all room_risk rows
-//   3. Render <RoomGrid> in list/table view mode
-
-import { createServerSupabaseClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
-
-export default async function RoomsPage() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (!user || error) redirect("/")
-
+//   1. Fetch all room_risk rows
+//   2. Render <RoomGrid> in list/table view mode
+export default function RoomsPage() {
+  // TODO: const supabase = await createServerSupabaseClient()
   // TODO: const rooms = await getRoomRisks(supabase)
 
   return (

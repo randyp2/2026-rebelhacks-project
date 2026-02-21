@@ -10,21 +10,9 @@
 //   - Privacy note: no biometric data is shown — name + booking history only
 //
 // Server component:
-//   1. Authenticate user
-//   2. Fetch persons ordered by last_room_purchase_timestamp DESC
-
-import { createServerSupabaseClient } from "@/utils/supabase/server"
-import { redirect } from "next/navigation"
-
-export default async function PersonsPage() {
-  const supabase = await createServerSupabaseClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (!user || error) redirect("/")
-
+//   1. Fetch persons ordered by last_room_purchase_timestamp DESC
+export default function PersonsPage() {
+  // TODO: const supabase = await createServerSupabaseClient()
   // TODO: fetch persons from supabase
 
   return (
