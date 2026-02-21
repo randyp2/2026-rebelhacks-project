@@ -70,7 +70,6 @@ function formatCount(value: number | undefined): string {
 
 function buildSignalLines(breakdown: BreakdownPayload): string[] {
   const normalized = breakdown.normalized ?? {}
-  const weights = breakdown.weights ?? {}
   const raw = breakdown.raw ?? {}
   const keys = Object.keys(normalized)
 
@@ -87,7 +86,6 @@ function buildSignalLines(breakdown: BreakdownPayload): string[] {
 
   const lines = sortedKeys.map((key) => {
     const parts = [`${humanizeKey(key)}: ${formatScore(normalized[key])}`]
-    if (weights[key] !== undefined) parts.push(`w ${formatScore(weights[key])}`)
     if (raw[key] !== undefined) parts.push(`raw ${formatCount(raw[key])}`)
     return parts.join(" | ")
   })
