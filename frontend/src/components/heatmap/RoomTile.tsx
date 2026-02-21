@@ -39,7 +39,7 @@ const RoomTile = memo(function RoomTile({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={`Room ${room.room_id}\nRisk: ${formatRiskScore(room.risk_score)}\nUpdated: ${new Date(room.last_updated).toLocaleTimeString()}`}
-      className="relative flex flex-col items-center justify-center rounded p-1.5 text-primary-foreground transition-transform duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      className="relative flex flex-col items-center justify-center rounded p-1 text-primary-foreground transition-transform duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       style={{
         backgroundColor: bgColor,
         filter: hovered
@@ -55,13 +55,13 @@ const RoomTile = memo(function RoomTile({
         ]
           .filter(Boolean)
           .join(", "),
-        minHeight: "56px",
+        minHeight: "50px",
       }}
     >
-      <span className="text-[10px] font-mono font-bold leading-none opacity-90 truncate w-full text-center">
+      <span className="w-full truncate text-center font-mono text-[9px] font-bold leading-none opacity-90">
         {room.room_id}
       </span>
-      <span className="text-[11px] font-mono font-bold leading-none mt-1">
+      <span className="mt-0.5 font-mono text-[10px] font-bold leading-none">
         {formatRiskScore(room.risk_score)}
       </span>
     </button>
