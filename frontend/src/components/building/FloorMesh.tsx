@@ -52,6 +52,7 @@ const FloorMesh = memo(function FloorMesh({
 	onClick,
 	onRoomSelect,
 }: FloorMeshProps) {
+	const isFocusedFloor = isSelected && hasSelection;
 	// animRef targets the inner group so the outer group can hold the static y-position
 	const animRef = useRef<THREE.Group>(null);
 	const slabMatRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -109,21 +110,26 @@ const FloorMesh = memo(function FloorMesh({
 			{/* Inner group: animated by useFrame (rotation, z-position) */}
 			<group ref={animRef}>
 				{/* ── Main slab ── */}
-        <mesh
-          onClick={(e) => {
-            e.stopPropagation();
-            // Ignore drag-end clicks from OrbitControls; only focus on real clicks.
-            if (e.delta > 4) return;
-            onClick();
-          }}
+				<mesh
+					onClick={(e) => {
+						e.stopPropagation();
+						if (isFocusedFloor) return;
+						// Ignore drag-end clicks from OrbitControls; only focus on real clicks.
+						if (e.delta > 4) return;
+						onClick();
+					}}
 					onPointerOver={(e) => {
+						if (isFocusedFloor) {
+							document.body.style.cursor = "default";
+							return;
+						}
 						e.stopPropagation();
 						setHoveredSlab(true);
 						document.body.style.cursor = "pointer";
 					}}
 					onPointerOut={() => {
 						setHoveredSlab(false);
-						document.body.style.cursor = "default";
+						document.body.style.cursor = isFocusedFloor ? "pointer" : "default";
 					}}
 				>
 					<boxGeometry args={[SLAB_W, SLAB_H, SLAB_D]} />
@@ -131,7 +137,9 @@ const FloorMesh = memo(function FloorMesh({
 						ref={slabMatRef}
 						color={NEUTRAL_SLAB_COLOR}
 						emissive={NEUTRAL_SLAB_COLOR}
-						emissiveIntensity={hoveredSlab ? 0.35 : isSelected ? 0.2 : 0}
+						emissiveIntensity={
+							isFocusedFloor ? 0 : hoveredSlab ? 0.35 : isSelected ? 0.2 : 0
+						}
 						roughness={0.55}
 						metalness={0.15}
 						transparent
@@ -167,7 +175,9 @@ const FloorMesh = memo(function FloorMesh({
 								}}
 								onPointerOut={() => {
 									setHoveredRoomId(null);
-									document.body.style.cursor = "default";
+									document.body.style.cursor = isFocusedFloor
+										? "pointer"
+										: "default";
 								}}
 							>
 								<boxGeometry args={[TILE_W, 0.08, TILE_D]} />

@@ -157,6 +157,20 @@ export default function Building3D({
 				camera={{ position: [3, cameraY + 1, cameraZ], fov: 42 }}
 				gl={{ antialias: true }}
 				dpr={[1, 2]}
+				onPointerEnter={() => {
+					if (selectedFloor !== null) {
+						document.body.style.cursor = "pointer";
+					}
+				}}
+				onPointerLeave={() => {
+					document.body.style.cursor = "default";
+				}}
+				onPointerMissed={(e) => {
+					if (selectedFloor === null) return;
+					if (e.delta > 4) return;
+					document.body.style.cursor = "default";
+					onFloorSelect(selectedFloor);
+				}}
 			>
 				<Suspense fallback={null}>
 					{isFloorView && (
