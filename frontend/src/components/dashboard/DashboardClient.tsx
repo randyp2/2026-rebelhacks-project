@@ -9,13 +9,13 @@
  * Layout (desktop):
  *   ┌──────────────────────────────────┬──────────────────┐
  *   │  3D Building (top)               │  RoomDetailsPanel │
- *   │  FloorHeatmap (when floor set)   │  AlertFeed        │
+ *   │  FloorHeatmap (when floor set)   │  NotificationList │
  *   └──────────────────────────────────┴──────────────────┘
  */
 
 import { useState, useMemo } from "react"
 import dynamic from "next/dynamic"
-import AlertFeed from "@/components/dashboard/AlertFeed"
+import { NotificationList } from "@/components/animate-ui/components/community/notification-list"
 import FloorHeatmap from "@/components/heatmap/FloorHeatmap"
 import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel"
 import { useRoomRisk } from "@/hooks/useRoomRisk"
@@ -113,9 +113,9 @@ export default function DashboardClient({ initialRooms, initialAlerts }: Props) 
           />
         )}
 
-        {/* Alert feed — always visible */}
-        <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-white/10 bg-[#0f1623] p-4">
-          <AlertFeed alerts={alerts} />
+        {/* Alert list — always visible */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <NotificationList alerts={alerts} />
         </div>
       </div>
     </div>
