@@ -1,0 +1,11 @@
+{
+  "event": "reservation.created",
+  "occurredAt": "2026-02-20T14:20:00Z",
+  "reservation": {
+    "id": "res_1001",
+    "assignedRoomNumber": "RM-120",
+    "status": "booked",
+    "guestName": "Jane Example"
+  }
+}
+

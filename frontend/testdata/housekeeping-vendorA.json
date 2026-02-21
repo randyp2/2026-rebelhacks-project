@@ -1,0 +1,10 @@
+{
+  "type": "service.note",
+  "created_at": "2026-02-20T14:22:00Z",
+  "room": {
+    "number": "R-405"
+  },
+  "note": "Please send 2 towels and 1 linen to room 405. Guest refused cleaning yesterday.",
+  "guestName": "John Example"
+}
+
