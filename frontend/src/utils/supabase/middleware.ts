@@ -1,5 +1,5 @@
-import { type CookieOptions, createServerClient } from "@supabase/ssr";
-import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
   const response = NextResponse.next({
@@ -49,30 +49,27 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const pathname = request.nextUrl.pathname
+  const { data: { user } } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
 
   // Redirect unauthenticated users away from /dashboard
   if (!user && pathname.startsWith("/dashboard")) {
-    const loginUrl = new URL("/", request.url)
-    const redirectResponse = NextResponse.redirect(loginUrl)
+    const loginUrl = new URL("/", request.url);
+    const redirectResponse = NextResponse.redirect(loginUrl);
     for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie)
+      redirectResponse.cookies.set(cookie);
     }
-    return redirectResponse
+    return redirectResponse;
   }
 
   // Redirect authenticated users away from login page
   if (user && pathname === "/") {
-    const dashboardUrl = new URL("/dashboard", request.url)
-    const redirectResponse = NextResponse.redirect(dashboardUrl)
+    const dashboardUrl = new URL("/dashboard", request.url);
+    const redirectResponse = NextResponse.redirect(dashboardUrl);
     for (const cookie of response.cookies.getAll()) {
-      redirectResponse.cookies.set(cookie)
+      redirectResponse.cookies.set(cookie);
     }
-    return redirectResponse
+    return redirectResponse;
   }
 
   return response;

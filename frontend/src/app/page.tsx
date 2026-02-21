@@ -1,5 +1,78 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { login, signInWithGoogle } from "@/lib/auth/auth-actions";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function HomePage() {
-  redirect("/dashboard");
+  return (
+    <div className="dark flex min-h-screen items-center justify-center bg-[#07090f] p-4">
+      <Card className="w-full max-w-md border-white/10 bg-[#0f1623] text-slate-100 shadow-xl shadow-black/30">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-slate-100">Welcome Back</CardTitle>
+          <CardDescription className="text-slate-400">Sign in to your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={login} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-300">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                className="border-white/10 bg-[#0a101b] text-slate-200 placeholder:text-slate-500 focus-visible:border-blue-500 focus-visible:ring-blue-500/30"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-slate-300">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Your password"
+                className="border-white/10 bg-[#0a101b] text-slate-200 placeholder:text-slate-500 focus-visible:border-blue-500 focus-visible:ring-blue-500/30"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full bg-blue-600 text-white hover:bg-blue-500">
+              Sign in
+            </Button>
+          </form>
+
+          <div className="my-6 flex items-center gap-4">
+            <Separator className="flex-1 bg-white/10" />
+            <span className="text-sm text-slate-500">or</span>
+            <Separator className="flex-1 bg-white/10" />
+          </div>
+
+          <form action={signInWithGoogle}>
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full border-white/15 bg-[#0a101b] text-slate-200 hover:bg-[#111a29] hover:text-slate-100"
+            >
+              Sign in with Google
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="text-blue-400 underline hover:text-blue-300">
+              Sign up
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
