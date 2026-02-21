@@ -37,6 +37,13 @@ const Building3D = dynamic(() => import("@/components/building/Building3D"), {
 type Props = {
 	initialRooms: RoomRiskRow[];
 	initialAlerts: AlertRow[];
+	initialRoomToPeople: Record<
+		string,
+		{
+			name: string;
+			riskLevel: string | null;
+		}[]
+	>;
 };
 
 function AlertFeedFallback() {
@@ -69,6 +76,7 @@ function AlertFeedFallback() {
 export default function DashboardClient({
 	initialRooms,
 	initialAlerts,
+	initialRoomToPeople,
 }: Props) {
 	const [selectedFloor, setSelectedFloor] = useState<number | null>(null);
 	const [selectedRoom, setSelectedRoom] = useState<EnrichedRoom | null>(null);
@@ -165,13 +173,14 @@ export default function DashboardClient({
 			{/* ── Right column: details + alert feed ── */}
 			<div className="flex w-72 shrink-0 flex-col gap-4">
 				{/* Room details panel (conditional) */}
-				{selectedRoom && (
-					<RoomDetailsPanel
-						room={selectedRoom}
-						alerts={alerts}
-						onClose={() => setSelectedRoom(null)}
-					/>
-				)}
+					{selectedRoom && (
+						<RoomDetailsPanel
+							room={selectedRoom}
+							alerts={alerts}
+							tiedPeople={initialRoomToPeople[selectedRoom.room_id] ?? []}
+							onClose={() => setSelectedRoom(null)}
+						/>
+					)}
 
 				{/* Alert list — always visible */}
 				<div className="flex min-h-0 flex-1 flex-col">
