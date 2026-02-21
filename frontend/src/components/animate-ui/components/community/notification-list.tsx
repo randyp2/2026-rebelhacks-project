@@ -3,6 +3,7 @@
 import * as React from "react"
 import { RotateCcw, ArrowUpRight, Bell } from "lucide-react"
 import { motion, type Transition } from "motion/react"
+import { useRouter } from "next/navigation"
 import { formatRiskScore, getRiskLevel } from "@/lib/risk/scoring"
 import type { AlertRow } from "@/types/database"
 
@@ -18,6 +19,10 @@ type NotificationItem = {
   time: string
   count?: number
 }
+
+const MAX_SHOWN_ROOMS = 8
+const COLLAPSED_VISIBLE_ROOMS = 3
+const EXPANSION_INTERVAL_MS = 90
 
 const transition: Transition = {
   type: "spring",
@@ -65,6 +70,17 @@ function truncateText(text: string, maxLength: number): string {
   return `${text.slice(0, maxLength)}...`
 }
 
+function normalizeExplanation(explanation: string | null): string | null {
+  if (!explanation) return explanation
+  if (!explanation.includes("Room risk threshold")) return explanation
+
+  const firstPeriodIndex = explanation.indexOf(".")
+  if (firstPeriodIndex === -1) return explanation
+
+  const normalized = explanation.slice(firstPeriodIndex + 1).trim()
+  return normalized.length > 0 ? normalized : explanation
+}
+
 function toNotificationItems(alerts: AlertRow[], maxItems: number): NotificationItem[] {
   const roomCounts = new Map<string, number>()
   for (const alert of alerts) {
@@ -74,11 +90,12 @@ function toNotificationItems(alerts: AlertRow[], maxItems: number): Notification
 
   return alerts.slice(0, maxItems).map((alert) => {
     const roomKey = alert.room_id ?? `unassigned:${alert.id}`
+    const normalizedExplanation = normalizeExplanation(alert.explanation)
     return {
       id: alert.id,
       title: alert.room_id ? `Room ${alert.room_id}` : "Unassigned room",
       subtitle:
-        (alert.explanation ? truncateText(alert.explanation, 40) : null) ??
+        (normalizedExplanation ? truncateText(normalizedExplanation, 40) : null) ??
         `Risk ${formatRiskScore(alert.risk_score)} (${getRiskLevel(alert.risk_score)})`,
       time: formatAlertTime(alert.timestamp),
       count: (roomCounts.get(roomKey) ?? 0) > 1 ? roomCounts.get(roomKey) : undefined,
@@ -86,16 +103,45 @@ function toNotificationItems(alerts: AlertRow[], maxItems: number): Notification
   })
 }
 
-function NotificationList({ alerts, maxItems = 10 }: NotificationListProps) {
+function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationListProps) {
   const [isExpanded, setIsExpanded] = React.useState(false)
+  const [visibleCount, setVisibleCount] = React.useState(COLLAPSED_VISIBLE_ROOMS)
+  const router = useRouter()
+  const maxVisibleRooms = Math.max(0, Math.min(maxItems, MAX_SHOWN_ROOMS))
 
   const notifications = React.useMemo(
-    () => toNotificationItems(alerts, maxItems),
-    [alerts, maxItems]
+    () => toNotificationItems(alerts, maxVisibleRooms),
+    [alerts, maxVisibleRooms]
   )
+
+  React.useEffect(() => {
+    if (!isExpanded) {
+      setVisibleCount(COLLAPSED_VISIBLE_ROOMS)
+      return
+    }
+
+    setVisibleCount((count) =>
+      Math.min(Math.max(count, COLLAPSED_VISIBLE_ROOMS), maxVisibleRooms)
+    )
+
+    if (maxVisibleRooms <= COLLAPSED_VISIBLE_ROOMS) return
+
+    const intervalId = window.setInterval(() => {
+      setVisibleCount((count) => {
+        if (count >= maxVisibleRooms) {
+          window.clearInterval(intervalId)
+          return count
+        }
+        return count + 1
+      })
+    }, EXPANSION_INTERVAL_MS)
+
+    return () => window.clearInterval(intervalId)
+  }, [isExpanded, maxVisibleRooms])
+
   const visibleNotifications = React.useMemo(
-    () => notifications.slice(0, isExpanded ? maxItems : 3),
-    [isExpanded, maxItems, notifications]
+    () => notifications.slice(0, visibleCount),
+    [notifications, visibleCount]
   )
 
   return (
@@ -119,7 +165,7 @@ function NotificationList({ alerts, maxItems = 10 }: NotificationListProps) {
           visibleNotifications.map((notification, i) => (
             <motion.div
               key={notification.id}
-              initial={false}
+              initial="collapsed"
               animate={isExpanded ? "expanded" : "collapsed"}
               className="relative rounded-xl border border-white/10 bg-[#172134] px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
               variants={getCardVariants(i)}
@@ -159,13 +205,15 @@ function NotificationList({ alerts, maxItems = 10 }: NotificationListProps) {
           >
             Alerts
           </motion.span>
-          <motion.span
-            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 text-sm font-medium text-slate-300"
+          <motion.button
+            type="button"
+            onClick={() => router.push("/dashboard/alerts")}
+            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 bg-transparent p-0 text-left text-sm font-medium text-slate-300"
             variants={viewAllTextVariants}
             transition={textSwitchTransition}
           >
             View all <ArrowUpRight className="size-4" />
-          </motion.span>
+          </motion.button>
         </span>
       </div>
     </motion.div>

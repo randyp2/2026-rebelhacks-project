@@ -12,6 +12,8 @@ import type {
   AlertRow,
   HotelEventRow,
   CvEventRow,
+  PersonRow,
+  PersonRiskRow,
   PersonRoomHistoryRow,
 } from "@/types/database"
 import type { DashboardRoom } from "@/types/dashboard"
@@ -180,6 +182,53 @@ export async function getPersonHistory(
     .order("purchase_timestamp", { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+export type PersonWithRiskRow = {
+  id: PersonRow["id"]
+  full_name: PersonRow["full_name"]
+  last_room_purchase_timestamp: PersonRow["last_room_purchase_timestamp"]
+  card_history: PersonRow["card_history"]
+  risk_level: PersonRiskRow["risk_level"] | null
+  risk_score: number | null
+  last_updated: PersonRiskRow["last_updated"] | null
+  score_breakdown: PersonRiskRow["score_breakdown"] | null
+}
+
+/** Persons merged with risk profile metadata. */
+export async function getPersonsWithRisk(client: TypedClient): Promise<PersonWithRiskRow[]> {
+  const [personsResult, risksResult] = await Promise.all([
+    client.from("persons").select("*").order("full_name", { ascending: true }),
+    client.from("person_risk").select("*"),
+  ])
+
+  if (personsResult.error) throw personsResult.error
+  if (risksResult.error) throw risksResult.error
+
+  const risksByPersonId = new Map<string, PersonRiskRow>()
+  for (const risk of risksResult.data ?? []) {
+    risksByPersonId.set(risk.person_id, risk)
+  }
+
+  return (personsResult.data ?? [])
+    .map((person) => {
+      const risk = risksByPersonId.get(person.id)
+      return {
+        id: person.id,
+        full_name: person.full_name,
+        last_room_purchase_timestamp: person.last_room_purchase_timestamp,
+        card_history: person.card_history,
+        risk_level: risk?.risk_level ?? null,
+        risk_score: risk ? Number(risk.risk_score) : null,
+        last_updated: risk?.last_updated ?? null,
+        score_breakdown: risk?.score_breakdown ?? null,
+      }
+    })
+    .sort((left, right) => {
+      const riskDelta = (right.risk_score ?? -1) - (left.risk_score ?? -1)
+      if (riskDelta !== 0) return riskDelta
+      return left.full_name.localeCompare(right.full_name)
+    })
 }
 
 /** Aggregated event-type counts for a room in the last 24 hours. */
