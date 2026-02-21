@@ -14,8 +14,9 @@
 
 import { OrbitControls, Text } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { useFloorFocusCamera } from "@/hooks/useFloorFocusCamera";
 import type { FloorData } from "@/hooks/useRoomRisk";
 import FloorMesh from "./FloorMesh";
 
@@ -32,12 +33,21 @@ type Building3DProps = {
 type CameraRigProps = {
 	targetPosition: [number, number, number];
 	targetLookAt: [number, number, number];
+	targetUp?: [number, number, number];
+	onSettled?: () => void;
 };
 
-function CameraRig({ targetPosition, targetLookAt }: CameraRigProps) {
+function CameraRig({
+	targetPosition,
+	targetLookAt,
+	targetUp = [0, 1, 0],
+	onSettled,
+}: CameraRigProps) {
 	const { camera } = useThree();
 	const targetPos = useMemo(() => new THREE.Vector3(), []);
 	const targetCtr = useMemo(() => new THREE.Vector3(), []);
+	const targetUpVec = useMemo(() => new THREE.Vector3(), []);
+	const hasSettledRef = useRef(false);
 
 	useEffect(() => {
 		return () => {
@@ -46,13 +56,27 @@ function CameraRig({ targetPosition, targetLookAt }: CameraRigProps) {
 	}, [camera]);
 
 	useFrame((_, delta) => {
-		const t = 1 - Math.exp(-delta * 4);
+		// Mild ease-in: keeps responsiveness while avoiding a sharp initial snap.
+		const tLinear = 1 - Math.exp(-delta * 4.4);
+		const t = tLinear * (0.7 + 0.3 * tLinear);
 		targetPos.set(...targetPosition);
 		targetCtr.set(...targetLookAt);
+		targetUpVec.set(...targetUp);
 		camera.position.lerp(targetPos, t);
-		// Stabilize top-down orientation and prevent sideways roll.
-		camera.up.set(0, 0, -1);
+		camera.up.lerp(targetUpVec, t);
 		camera.lookAt(targetCtr);
+
+		if (!onSettled) return;
+		const posError = camera.position.distanceTo(targetPos);
+		const upError = camera.up.distanceTo(targetUpVec);
+		if (posError < 0.05 && upError < 0.02) {
+			if (!hasSettledRef.current) {
+				hasSettledRef.current = true;
+				onSettled();
+			}
+			return;
+		}
+		hasSettledRef.current = false;
 	});
 
 	return null;
@@ -64,6 +88,8 @@ export default function Building3D({
 	onFloorSelect,
 	onRoomSelect,
 }: Building3DProps) {
+	const [bodyCursor, setBodyCursor] = useState<"default" | "pointer">("default");
+
 	const isFloorView = selectedFloor !== null;
 	const floorOptions = useMemo(
 		() => [...floors].sort((a, b) => a.floor - b.floor),
@@ -81,20 +107,33 @@ export default function Building3D({
 		return Math.max(16, 11 + floors.length * 1.4);
 	}, [floors.length]);
 
-	const selectedY = useMemo(() => {
-		if (selectedFloor === null) return cameraY;
-		return (selectedFloor - 1) * FLOOR_GAP;
-	}, [selectedFloor, cameraY]);
+	const {
+		cameraRef,
+		controlsRef,
+		restorePose,
+		cameraPosition,
+		controlsTarget,
+		nonFloorPosition,
+		nonFloorTarget,
+		nonFloorUp,
+		handleFloorSelection,
+		clearFocusedFloor,
+		setRestorePose,
+		isControlsEnabled,
+	} = useFloorFocusCamera({
+		selectedFloor,
+		cameraY,
+		cameraZ,
+		floorGap: FLOOR_GAP,
+		onFloorSelect,
+	});
 
-	const cameraPosition = useMemo<[number, number, number]>(() => {
-		if (isFloorView) return [0, selectedY + 32, 2];
-		return [3, cameraY + 1, cameraZ];
-	}, [isFloorView, selectedY, cameraY, cameraZ]);
-
-	const controlsTarget = useMemo<[number, number, number]>(() => {
-		if (isFloorView) return [0, selectedY, 4];
-		return [0, cameraY, 0];
-	}, [isFloorView, selectedY, cameraY]);
+	useEffect(() => {
+		document.body.style.cursor = bodyCursor;
+		return () => {
+			document.body.style.cursor = "default";
+		};
+	}, [bodyCursor]);
 
 	return (
 		<div className="relative h-[820px] w-full bg-[#07090f]">
@@ -102,9 +141,10 @@ export default function Building3D({
 				<button
 					type="button"
 					onClick={() => {
-						if (selectedFloor !== null) onFloorSelect(selectedFloor);
+						setBodyCursor("default");
+						clearFocusedFloor();
 					}}
-					className="absolute right-3 top-3 z-10 rounded-md border border-white/15 bg-[#111827]/85 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-[#1f2937]"
+					className="absolute right-3 top-3 z-10 cursor-pointer rounded-md border border-white/15 bg-[#111827]/85 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-[#1f2937]"
 				>
 					Exit floor view
 				</button>
@@ -121,8 +161,8 @@ export default function Building3D({
 										<button
 											type="button"
 											aria-label={`View floor ${floor}`}
-											onClick={() => onFloorSelect(floor)}
-											className={`h-4 w-4 rounded-full border transition ${
+											onClick={() => handleFloorSelection(floor)}
+											className={`h-4 w-4 cursor-pointer rounded-full border transition ${
 												active
 													? "border-white ring-2 ring-white/40"
 													: "border-slate-200/80"
@@ -131,8 +171,8 @@ export default function Building3D({
 										/>
 										<button
 											type="button"
-											onClick={() => onFloorSelect(floor)}
-											className={`text-xs transition ${
+											onClick={() => handleFloorSelection(floor)}
+											className={`cursor-pointer text-xs transition ${
 												active
 													? "font-semibold text-orange-200"
 													: "text-slate-200 hover:text-white"
@@ -143,7 +183,7 @@ export default function Building3D({
 									</div>
 									{idx < floorOptions.length - 1 && (
 										<div
-											className="ml-[7px] my-1.5 h-4 border-l border-slate-400/80"
+											className="ml-[7px] my-1.5 h-4 cursor-pointer border-l border-slate-400/80"
 											aria-hidden="true"
 										/>
 									)}
@@ -157,19 +197,22 @@ export default function Building3D({
 				camera={{ position: [3, cameraY + 1, cameraZ], fov: 42 }}
 				gl={{ antialias: true }}
 				dpr={[1, 2]}
+				onCreated={(state) => {
+					cameraRef.current = state.camera;
+				}}
 				onPointerEnter={() => {
 					if (selectedFloor !== null) {
-						document.body.style.cursor = "pointer";
+						setBodyCursor("pointer");
 					}
 				}}
 				onPointerLeave={() => {
-					document.body.style.cursor = "default";
+					setBodyCursor("default");
 				}}
 				onPointerMissed={(e) => {
 					if (selectedFloor === null) return;
 					if (e.delta > 4) return;
-					document.body.style.cursor = "default";
-					onFloorSelect(selectedFloor);
+					setBodyCursor("default");
+					clearFocusedFloor();
 				}}
 			>
 				<Suspense fallback={null}>
@@ -177,6 +220,15 @@ export default function Building3D({
 						<CameraRig
 							targetPosition={cameraPosition}
 							targetLookAt={controlsTarget}
+							targetUp={[0, 0, -1]}
+						/>
+					)}
+					{!isFloorView && restorePose !== null && (
+						<CameraRig
+							targetPosition={nonFloorPosition}
+							targetLookAt={nonFloorTarget}
+							targetUp={nonFloorUp}
+							onSettled={() => setRestorePose(null)}
 						/>
 					)}
 					{/* Lighting */}
@@ -199,7 +251,7 @@ export default function Building3D({
 									isSelected={selectedFloor === fd.floor}
 									hasSelection={selectedFloor !== null}
 									rooms={fd.rooms}
-									onClick={() => onFloorSelect(fd.floor)}
+									onClick={() => handleFloorSelection(fd.floor)}
 									onRoomSelect={onRoomSelect}
 								/>
 								{/* Floor label on the left side */}
@@ -225,16 +277,17 @@ export default function Building3D({
 					)}
 
 					<OrbitControls
+						ref={controlsRef}
 						zoomSpeed={0.67}
 						rotateSpeed={0.67}
 						makeDefault
-						enabled={!isFloorView}
+						enabled={isControlsEnabled}
 						enablePan={false}
-						enableRotate={!isFloorView}
+						enableRotate={isControlsEnabled}
 						autoRotate={false}
 						minDistance={12}
 						maxDistance={60}
-						enableDamping={!isFloorView}
+						enableDamping={isControlsEnabled}
 						dampingFactor={0.08}
 						minPolarAngle={isFloorView ? 0 : 0.1}
 						maxPolarAngle={Math.PI / 2 + 0.1}
