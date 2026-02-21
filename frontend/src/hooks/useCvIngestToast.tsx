@@ -128,22 +128,25 @@ export function useCvIngestToast(): void {
   // was fully established (race condition on first uploader post).
   useEffect(() => {
     const supabase = createClient()
-    const cutoff = new Date(Date.now() - 60_000).toISOString()
-    supabase
-      .from("cv_frame_analysis")
-      .select("video_id,room_id,camera_id")
-      .gte("created_at", cutoff)
-      .order("created_at", { ascending: true })
-      .limit(20)
-      .then(({ data }) => {
+    const cutoff = new Date(Date.now() - 60_000).toISOString();
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("cv_frame_analysis")
+          .select("video_id,room_id,camera_id")
+          .gte("created_at", cutoff)
+          .order("created_at", { ascending: true })
+          .limit(20)
         if (!data) return
         for (const row of data) {
           if (!row.video_id || seenVideoIds.current.has(row.video_id)) continue
           seenVideoIds.current.add(row.video_id)
           fireToast(row.video_id, row.room_id, row.camera_id)
         }
-      })
-      .catch(() => { /* best-effort; Realtime subscription is the primary path */ })
+      } catch {
+        // best-effort; Realtime subscription is the primary path
+      }
+    })()
   }, [])
 
   // Ongoing Realtime subscription for frames arriving after mount.

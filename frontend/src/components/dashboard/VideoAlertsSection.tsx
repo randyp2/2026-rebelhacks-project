@@ -195,14 +195,15 @@ export default function VideoAlertsSection({
 	useEffect(() => {
 		const supabase = createClient()
 		const cutoff = new Date(Date.now() - 120_000).toISOString()
-		const summaryIds = new Set(summaries.map((s) => s.video_id))
-		supabase
-			.from("cv_frame_analysis")
-			.select("video_id")
-			.gte("created_at", cutoff)
-			.order("created_at", { ascending: true })
-			.limit(20)
-			.then(({ data }) => {
+		const summaryIds = new Set(summaries.map((s) => s.video_id));
+		(async () => {
+			try {
+				const { data } = await supabase
+					.from("cv_frame_analysis")
+					.select("video_id")
+					.gte("created_at", cutoff)
+					.order("created_at", { ascending: true })
+					.limit(20)
 				if (!data) return
 				const newIds: string[] = []
 				for (const row of data) {
@@ -222,8 +223,10 @@ export default function VideoAlertsSection({
 						return next
 					})
 				}
-			})
-			.catch(() => { /* best-effort */ })
+			} catch {
+				// best-effort
+			}
+		})()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
