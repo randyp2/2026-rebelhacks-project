@@ -504,6 +504,30 @@ export type Database = {
           },
         ]
       }
+      rooms: {
+        Row: {
+          created_at: string
+          floor: number
+          id: string
+          is_active: boolean
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          floor: number
+          id?: string
+          is_active?: boolean
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          floor?: number
+          id?: string
+          is_active?: boolean
+          room_id?: string
+        }
+        Relationships: []
+      }
       room_risk: {
         Row: {
           last_updated: string
@@ -697,6 +721,7 @@ export type HotelEventRow = Tables<"hotel_events">
 export type CvEventRow = Tables<"cv_events">
 export type PersonRow = Tables<"persons">
 export type ProfileRow = Tables<"profiles">
+export type RoomRow = Tables<"rooms">
 export type PersonRiskRow = Tables<"person_risk">
 export type PersonRoomHistoryRow = Tables<"person_room_history">
 

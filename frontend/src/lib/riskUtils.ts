@@ -4,8 +4,9 @@
  * Pure helpers for deriving floor information from room IDs and
  * aggregating per-floor risk data.
  *
- * Convention: room_id leading digits encode the floor.
- *   "101" → floor 1   "215" → floor 2   "1001" → floor 10
+ * Convention: room_id = concat(floor, lpad(seq, 3, '0'))
+ *   Floors 1-9  → 4-digit IDs: "1001"–"9999"  (first 1 digit = floor)
+ *   Floor 10    → 5-digit IDs: "10001"–"10999" (first 2 digits = floor)
  */
 
 import type { RoomRiskRow } from "@/types/database"
@@ -17,19 +18,25 @@ import type { RoomRiskRow } from "@/types/database"
 export function getFloorFromRoomId(roomId: string): number {
   const digits = roomId.replace(/\D/g, "")
   if (!digits || digits.length < 3) return 1
-  // 3-digit → first digit is floor; 4-digit → first two digits
-  return digits.length >= 4
+  // 5+ digits → first two digits are the floor (e.g. "10001" → 10)
+  // 3-4 digits → first digit is the floor (e.g. "1001" → 1, "1100" → 1)
+  return digits.length >= 5
     ? parseInt(digits.slice(0, 2), 10)
     : parseInt(digits[0], 10)
+}
+
+type RoomWithOptionalFloor = {
+  room_id: string
+  floor?: number
 }
 
 /**
  * Group an array of room_risk rows by their derived floor number.
  */
-export function groupRoomsByFloor(rooms: RoomRiskRow[]): Map<number, RoomRiskRow[]> {
-  const map = new Map<number, RoomRiskRow[]>()
+export function groupRoomsByFloor<T extends RoomWithOptionalFloor>(rooms: T[]): Map<number, T[]> {
+  const map = new Map<number, T[]>()
   for (const room of rooms) {
-    const floor = getFloorFromRoomId(room.room_id)
+    const floor = typeof room.floor === "number" ? room.floor : getFloorFromRoomId(room.room_id)
     if (!map.has(floor)) map.set(floor, [])
     map.get(floor)!.push(room)
   }
