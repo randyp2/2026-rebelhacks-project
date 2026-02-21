@@ -66,6 +66,10 @@ export function useAlertsRealtime(initialAlerts: AlertRow[]): AlertRow[] {
   const [alerts, setAlerts] = useState<AlertRow[]>(initialAlerts)
 
   useEffect(() => {
+    setAlerts(initialAlerts)
+  }, [initialAlerts])
+
+  useEffect(() => {
     const supabase = createClient()
     const channel = supabase
       .channel("alerts-live")

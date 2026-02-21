@@ -15,6 +15,7 @@ export type ParsedAlertExplanation = {
 
 const BREAKDOWN_MARKER = "breakdown="
 const MAX_SIGNAL_LINES = 4
+const GENERIC_SYNTHETIC_EXPLANATION = "high room risk score from aggregated heatmap signals"
 
 function extractJsonObject(text: string): string | null {
   const start = text.indexOf("{")
@@ -141,6 +142,13 @@ export function parseAlertExplanation(explanation: string | null): ParsedAlertEx
   const breakdownIndex = explanation.indexOf(BREAKDOWN_MARKER)
   if (breakdownIndex === -1) {
     const cleaned = normalizeSentence(stripIdentifiers(explanation))
+    if (cleaned.toLowerCase() === GENERIC_SYNTHETIC_EXPLANATION) {
+      return {
+        summary: "No explicit alert details available",
+        details: [],
+        hasBreakdown: false,
+      }
+    }
     return {
       summary: cleaned.length > 0 ? cleaned : "Alert triggered",
       details: [],

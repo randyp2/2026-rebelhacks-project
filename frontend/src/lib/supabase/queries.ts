@@ -98,70 +98,46 @@ export async function getRecentAlerts(
   client: TypedClient,
   limit = 50
 ): Promise<AlertRow[]> {
-  const HIGH_RISK_THRESHOLD = 10
+  const { data: activeRoomRows, error: roomsError } = await client
+    .from("rooms")
+    .select("room_id,is_active")
+    .eq("is_active", true)
+    .limit(10000)
+  if (roomsError) throw roomsError
 
-  const [alertsResult, roomRiskResult, roomsResult] = await Promise.all([
-    client
+  const activeRoomIds = new Set((activeRoomRows ?? []).map((row) => row.room_id))
+
+  // Walk alerts newest-first and stop as soon as we have enough entries after
+  // per-room dedupe. This avoids synthetic fallback explanations and avoids a
+  // hard dependency on an arbitrary "latest N rows" window.
+  const latestDbAlertByRoom = new Map<string, AlertRow>()
+  const unassignedAlerts: AlertRow[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const to = from + PAGE_SIZE - 1
+    const alertsResult = await client
       .from("alerts")
       .select("*")
       .order("timestamp", { ascending: false })
-      .limit(limit),
-    client.from("room_risk").select("room_id,risk_score,last_updated").limit(10000),
-    client.from("rooms").select("room_id,is_active").eq("is_active", true).limit(10000),
-  ])
+      .range(from, to)
+    if (alertsResult.error) throw alertsResult.error
 
-  if (alertsResult.error) throw alertsResult.error
-  if (roomRiskResult.error) throw roomRiskResult.error
-  if (roomsResult.error) throw roomsResult.error
-
-  const dbAlerts = alertsResult.data ?? []
-  const roomRiskRows = roomRiskResult.data ?? []
-  const activeRoomRows = roomsResult.data ?? []
-
-  const activeRoomIds = new Set(activeRoomRows.map((row) => row.room_id))
-  const activeRoomDbAlerts = dbAlerts.filter(
-    (alert) => !alert.room_id || activeRoomIds.has(alert.room_id)
-  )
-
-  // Canonicalize to latest alert per room so all dashboard views read the same
-  // "current room alert" state (instead of each component deduping differently).
-  const latestDbAlertByRoom = new Map<string, AlertRow>()
-  const unassignedAlerts: AlertRow[] = []
-  for (const alert of activeRoomDbAlerts) {
-    if (!alert.room_id) {
-      unassignedAlerts.push(alert)
-      continue
+    const batch = alertsResult.data ?? []
+    for (const alert of batch) {
+      if (!alert.room_id) {
+        unassignedAlerts.push(alert)
+        continue
+      }
+      if (!activeRoomIds.has(alert.room_id)) continue
+      if (!latestDbAlertByRoom.has(alert.room_id)) latestDbAlertByRoom.set(alert.room_id, alert)
     }
-    const existing = latestDbAlertByRoom.get(alert.room_id)
-    if (
-      !existing ||
-      new Date(alert.timestamp).getTime() > new Date(existing.timestamp).getTime()
-    ) {
-      latestDbAlertByRoom.set(alert.room_id, alert)
-    }
+
+    if (latestDbAlertByRoom.size + unassignedAlerts.length >= limit) break
+    if (batch.length < PAGE_SIZE) break
   }
 
-  const roomIdsWithDbAlerts = new Set(latestDbAlertByRoom.keys())
-
-  // Keep the UI consistent with the 3D heatmap: if a room is high risk in room_risk
-  // but has no explicit alert row yet, synthesize a derived alert entry.
-  const syntheticRiskAlerts: AlertRow[] = roomRiskRows
-    .filter((row) => activeRoomIds.has(row.room_id))
-    .filter((row) => row.risk_score >= HIGH_RISK_THRESHOLD)
-    .filter((row) => !roomIdsWithDbAlerts.has(row.room_id))
-    .map((row) => ({
-      id: `derived-risk-${row.room_id}`,
-      alert_type: "RISK_THRESHOLD",
-      room_id: row.room_id,
-      person_id: null,
-      risk_score: row.risk_score,
-      timestamp: row.last_updated,
-      explanation: "High room risk score from aggregated heatmap signals",
-    }))
-
-  return [...latestDbAlertByRoom.values(), ...syntheticRiskAlerts, ...unassignedAlerts].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  )
+  return [...latestDbAlertByRoom.values(), ...unassignedAlerts]
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit)
 }
 
 /** Most recent CV video summaries, newest first by update time. */

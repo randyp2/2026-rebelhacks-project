@@ -146,13 +146,16 @@ export async function POST(req: Request) {
 	}
 
 	const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-	let geminiResponse: { text?: string } & Record<string, unknown>;
+	let responsePreview = "";
+	let payload: unknown = null;
 	try {
-		geminiResponse = (await ai.models.generateContent({
+		const geminiResponse = await ai.models.generateContent({
 			model,
 			contents: [{ role: "user", parts }],
 			config: { temperature: 0 },
-		})) as unknown as { text?: string } & Record<string, unknown>;
+		});
+		responsePreview = geminiResponse.text ?? "";
+		payload = JSON.parse(JSON.stringify(geminiResponse));
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		return NextResponse.json(
@@ -167,15 +170,12 @@ export async function POST(req: Request) {
 		);
 	}
 
-	const payload = geminiResponse;
-	const text = geminiResponse.text ?? "";
-
 	return NextResponse.json({
 		ok: true,
 		service: "cv-images-ingest-health",
 		model,
 		gemini_connected: true,
-		response_preview: text.slice(0, 500),
+		response_preview: responsePreview.slice(0, 500),
 		raw: payload,
 		timestamp: new Date().toISOString(),
 	});
