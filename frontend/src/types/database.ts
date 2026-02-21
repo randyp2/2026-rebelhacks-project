@@ -527,6 +527,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_room_risk: {
+        Args: { p_room_id: string; p_window_minutes?: number }
+        Returns: {
+          explanation: string
+          risk_score: number
+          score_breakdown: Json
+        }[]
+      }
       compute_person_risk: {
         Args: { p_person_id: string }
         Returns: {
@@ -536,19 +544,14 @@ export type Database = {
           trigger_room_id: string
         }[]
       }
-      compute_room_risk: {
-        Args: { p_room_id: string; p_window_minutes?: number }
-        Returns: {
-          explanation: string
-          risk_score: number
-          score_breakdown: Json
-        }[]
+      refresh_person_risk: {
+        Args: never
+        Returns: number
       }
-      refresh_person_risk: { Args: never; Returns: number }
       refresh_room_risk: {
         Args: {
           p_lookback_hours?: number
-          p_room_ids?: string[]
+          p_room_ids?: string[] | null
           p_window_minutes?: number
         }
         Returns: number
@@ -694,6 +697,7 @@ export type HotelEventRow = Tables<"hotel_events">
 export type CvEventRow = Tables<"cv_events">
 export type PersonRow = Tables<"persons">
 export type ProfileRow = Tables<"profiles">
+export type PersonRiskRow = Tables<"person_risk">
 export type PersonRoomHistoryRow = Tables<"person_room_history">
 
 // Convenience insert/update types

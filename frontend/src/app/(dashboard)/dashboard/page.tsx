@@ -1,5 +1,5 @@
 /**
- * DashboardPage (server component)
+ * DashboardPage
  *
  * 1. Fetches initial room risks + recent alerts server-side (fast first paint).
  * 2. Passes optional user profile info for header display when available.
@@ -10,6 +10,8 @@ import { createServerSupabaseClient } from "@/utils/supabase/server"
 import { getRoomRisks, getRecentAlerts } from "@/lib/supabase/queries"
 import Header from "@/components/layout/Header"
 import DashboardClient from "@/components/dashboard/DashboardClient"
+import Header from "@/components/layout/Header"
+import { MOCK_ALERTS, MOCK_ROOMS } from "@/lib/mockData"
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()

@@ -1,4 +1,5 @@
-"use client"
+"use client";
+
 /**
  * Sidebar
  *
@@ -7,29 +8,34 @@
  * Sign-out navigates to the /logout page.
  */
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
 import {
-  Shield,
-  LayoutDashboard,
-  Hotel,
-  Bell,
-  Users,
-  Settings,
-  LogOut,
-} from "lucide-react"
+	Bell,
+	Hotel,
+	LayoutDashboard,
+	LogOut,
+	Settings,
+	Shield,
+	Users,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
-  { href: "/dashboard",         label: "Overview", icon: LayoutDashboard, exact: true  },
-  { href: "/dashboard/rooms",   label: "Rooms",    icon: Hotel,           exact: false },
-  { href: "/dashboard/alerts",  label: "Alerts",   icon: Bell,            exact: false },
-  { href: "/dashboard/persons", label: "Persons",  icon: Users,           exact: false },
-  { href: "/dashboard/settings",label: "Settings", icon: Settings,        exact: false },
-] as const
+	{ href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+	{ href: "/dashboard/rooms", label: "Rooms", icon: Hotel, exact: false },
+	{ href: "/dashboard/alerts", label: "Alerts", icon: Bell, exact: false },
+	{ href: "/dashboard/persons", label: "Persons", icon: Users, exact: false },
+	{
+		href: "/dashboard/settings",
+		label: "Settings",
+		icon: Settings,
+		exact: false,
+	},
+] as const;
 
 export default function Sidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
+	const pathname = usePathname();
+	const router = useRouter();
 
   return (
     <aside className="flex h-screen w-56 shrink-0 flex-col border-r border-white/8 bg-[#080d14]">
@@ -61,17 +67,17 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Sign out */}
-      <div className="border-t border-white/8 p-2">
-        <button
-          type="button"
-          onClick={() => router.push("/logout")}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          Sign out
-        </button>
-      </div>
-    </aside>
-  )
+			{/* Sign out */}
+			<div className="border-t border-white/8 p-2">
+				<button
+					type="button"
+					onClick={() => router.push("/logout")}
+					className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-white/5 hover:text-slate-200"
+				>
+					<LogOut className="h-4 w-4 shrink-0" />
+					Sign out
+				</button>
+			</div>
+		</aside>
+	);
 }

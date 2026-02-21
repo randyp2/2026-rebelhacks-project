@@ -17,10 +17,18 @@ import type { EnrichedRoom } from "@/hooks/useRoomRisk"
 type RoomTileProps = {
   room: EnrichedRoom
   isSelected: boolean
+  isTopRiskRoom?: boolean
+  isTopRiskCluster?: boolean
   onClick: (room: EnrichedRoom) => void
 }
 
-const RoomTile = memo(function RoomTile({ room, isSelected, onClick }: RoomTileProps) {
+const RoomTile = memo(function RoomTile({
+  room,
+  isSelected,
+  isTopRiskRoom = false,
+  isTopRiskCluster = false,
+  onClick,
+}: RoomTileProps) {
   const [hovered, setHovered] = useState(false)
   const bgColor = getRiskHexColor(room.risk_score)
 
@@ -40,7 +48,13 @@ const RoomTile = memo(function RoomTile({ room, isSelected, onClick }: RoomTileP
             ? "brightness(1.2)"
             : "brightness(1)",
         transform: hovered ? "scale(1.06)" : "scale(1)",
-        boxShadow: isSelected ? "0 0 0 2px white, 0 0 0 4px rgba(255,255,255,0.2)" : "none",
+        boxShadow: [
+          isSelected ? "0 0 0 2px white, 0 0 0 4px rgba(255,255,255,0.2)" : "",
+          isTopRiskRoom ? "0 0 0 2px rgba(255, 75, 75, 0.95)" : "",
+          isTopRiskCluster ? "0 0 0 2px rgba(253, 224, 71, 0.9) inset" : "",
+        ]
+          .filter(Boolean)
+          .join(", "),
         minHeight: "56px",
       }}
     >
