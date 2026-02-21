@@ -266,7 +266,6 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
                 <tr key={person.id} className="transition-colors hover:bg-white/[0.03]">
                   <td className="px-4 py-3 text-sm text-slate-200">
                     <div className="font-semibold">{person.full_name}</div>
-                    <div className="text-xs text-slate-500">{person.id.slice(0, 8)}…</div>
                   </td>
                   <td
                     className={`whitespace-nowrap px-4 py-3 text-sm font-semibold ${getRiskLevelClass(person.normalizedRiskLevel)}`}
