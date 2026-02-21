@@ -10,7 +10,6 @@ import { createServerSupabaseClient } from "@/utils/supabase/server"
 import { getRoomRisks, getRecentAlerts } from "@/lib/supabase/queries"
 import Header from "@/components/layout/Header"
 import DashboardClient from "@/components/dashboard/DashboardClient"
-import Header from "@/components/layout/Header"
 import { MOCK_ALERTS, MOCK_ROOMS } from "@/lib/mockData"
 
 export default async function DashboardPage() {

@@ -33,17 +33,6 @@ import type { AlertRow, RoomRiskRow } from "@/types/database"
 
 // Lazy-load the Canvas so Three.js is never bundled into the server render
 const Building3D = dynamic(() => import("@/components/building/Building3D"), {
-  ssr: false,
-  loading: () => <Spinner />,
-})
-
-type Props = {
-  initialRooms: RoomRiskRow[]
-  initialAlerts: AlertRow[]
-}
-
-// Lazy-load the Canvas so Three.js is never bundled into the server render
-const Building3D = dynamic(() => import("@/components/building/Building3D"), {
 	ssr: false,
 	loading: () => <Spinner />,
 });
