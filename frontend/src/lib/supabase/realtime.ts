@@ -8,14 +8,19 @@
 import { useState, useEffect } from "react"
 import { createClient } from "@/utils/supabase/client"
 import type { RoomRiskRow, AlertRow } from "@/types/database"
+import type { DashboardRoom } from "@/types/dashboard"
 
 /**
  * Keeps an array of room_risk rows live by merging INSERT/UPDATE events.
  * Rows are keyed by room_id — an incoming row replaces the existing one
  * or is appended if it's new.
  */
-export function useRoomRiskRealtime(initialRooms: RoomRiskRow[]): RoomRiskRow[] {
-  const [rooms, setRooms] = useState<RoomRiskRow[]>(initialRooms)
+export function useRoomRiskRealtime(initialRooms: DashboardRoom[]): DashboardRoom[] {
+  const [rooms, setRooms] = useState<DashboardRoom[]>(initialRooms)
+
+  useEffect(() => {
+    setRooms(initialRooms)
+  }, [initialRooms])
 
   useEffect(() => {
     const supabase = createClient()
@@ -30,10 +35,11 @@ export function useRoomRiskRealtime(initialRooms: RoomRiskRow[]): RoomRiskRow[] 
             const idx = prev.findIndex((r) => r.room_id === incoming.room_id)
             if (idx >= 0) {
               const next = [...prev]
-              next[idx] = incoming
+              next[idx] = { ...incoming, floor: prev[idx].floor }
               return next
             }
-            return [...prev, incoming]
+            // Ignore risk rows for rooms that are not in canonical inventory.
+            return prev
           })
         }
       )
