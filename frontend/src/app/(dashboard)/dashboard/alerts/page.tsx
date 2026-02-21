@@ -19,7 +19,7 @@ export default async function AlertsPage() {
   const alerts = await getRecentAlerts(supabase, 500).catch(() => [])
 
   return (
-    <div className="p-4">
+    <div className="h-full overflow-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">Alerts</h1>
       <UltraQualityDataTable alerts={alerts} />
     </div>
