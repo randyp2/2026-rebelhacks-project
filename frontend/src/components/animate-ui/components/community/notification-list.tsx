@@ -3,6 +3,7 @@
 import * as React from "react"
 import { RotateCcw, ArrowUpRight, Bell } from "lucide-react"
 import { motion, type Transition } from "motion/react"
+import { useRouter } from "next/navigation"
 import { formatRiskScore, getRiskLevel } from "@/lib/risk/scoring"
 import type { AlertRow } from "@/types/database"
 
@@ -18,6 +19,8 @@ type NotificationItem = {
   time: string
   count?: number
 }
+
+const MAX_SHOWN_ROOMS = 8
 
 const transition: Transition = {
   type: "spring",
@@ -86,16 +89,18 @@ function toNotificationItems(alerts: AlertRow[], maxItems: number): Notification
   })
 }
 
-function NotificationList({ alerts, maxItems = 10 }: NotificationListProps) {
+function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationListProps) {
   const [isExpanded, setIsExpanded] = React.useState(false)
+  const router = useRouter()
+  const maxVisibleRooms = Math.max(0, Math.min(maxItems, MAX_SHOWN_ROOMS))
 
   const notifications = React.useMemo(
-    () => toNotificationItems(alerts, maxItems),
-    [alerts, maxItems]
+    () => toNotificationItems(alerts, maxVisibleRooms),
+    [alerts, maxVisibleRooms]
   )
   const visibleNotifications = React.useMemo(
-    () => notifications.slice(0, isExpanded ? maxItems : 3),
-    [isExpanded, maxItems, notifications]
+    () => notifications.slice(0, isExpanded ? maxVisibleRooms : 3),
+    [isExpanded, maxVisibleRooms, notifications]
   )
 
   return (
@@ -159,13 +164,15 @@ function NotificationList({ alerts, maxItems = 10 }: NotificationListProps) {
           >
             Alerts
           </motion.span>
-          <motion.span
-            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 text-sm font-medium text-slate-300"
+          <motion.button
+            type="button"
+            onClick={() => router.push("/dashboard/alerts")}
+            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 bg-transparent p-0 text-left text-sm font-medium text-slate-300"
             variants={viewAllTextVariants}
             transition={textSwitchTransition}
           >
             View all <ArrowUpRight className="size-4" />
-          </motion.span>
+          </motion.button>
         </span>
       </div>
     </motion.div>
