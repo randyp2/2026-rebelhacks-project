@@ -20,6 +20,32 @@ import type { DashboardRoom } from "@/types/dashboard"
 
 export type TypedClient = SupabaseClient<Database>
 
+const PAGE_SIZE = 1000
+
+type PagedResult<T> = {
+  data: T[] | null
+  error: unknown
+}
+
+async function fetchAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<PagedResult<T>>
+): Promise<T[]> {
+  const rows: T[] = []
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const to = from + PAGE_SIZE - 1
+    const result = await fetchPage(from, to)
+    if (result.error) throw result.error
+
+    const batch = result.data ?? []
+    rows.push(...batch)
+
+    if (batch.length < PAGE_SIZE) break
+  }
+
+  return rows
+}
+
 /** All rooms ordered by risk score descending. */
 export async function getRoomRisks(client: TypedClient): Promise<RoomRiskRow[]> {
   const { data, error } = await client
@@ -78,8 +104,8 @@ export async function getRecentAlerts(
       .select("*")
       .order("timestamp", { ascending: false })
       .limit(limit),
-    client.from("room_risk").select("room_id,risk_score,last_updated"),
-    client.from("rooms").select("room_id,is_active").eq("is_active", true),
+    client.from("room_risk").select("room_id,risk_score,last_updated").limit(10000),
+    client.from("rooms").select("room_id,is_active").eq("is_active", true).limit(10000),
   ])
 
   if (alertsResult.error) throw alertsResult.error
@@ -228,29 +254,41 @@ function extractCurrentRooms(historyRows: PersonRoomHistoryRow[]): string[] {
 
 /** Persons merged with risk profile metadata. */
 export async function getPersonsWithRisk(client: TypedClient): Promise<PersonWithRiskRow[]> {
-  const [personsResult, risksResult, roomHistoryResult] = await Promise.all([
-    client.from("persons").select("*").order("full_name", { ascending: true }),
-    client.from("person_risk").select("*"),
-    client.from("person_room_history").select("*"),
+  const [persons, risks, roomHistoryRows] = await Promise.all([
+    fetchAllRows<PersonRow>((from, to) =>
+      client
+        .from("persons")
+        .select("*")
+        .order("full_name", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<PersonRiskRow>((from, to) =>
+      client.from("person_risk").select("*").order("person_id", { ascending: true }).range(from, to)
+    ),
+    fetchAllRows<PersonRoomHistoryRow>((from, to) =>
+      client
+        .from("person_room_history")
+        .select("*")
+        .order("person_id", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
   ])
 
-  if (personsResult.error) throw personsResult.error
-  if (risksResult.error) throw risksResult.error
-  if (roomHistoryResult.error) throw roomHistoryResult.error
-
   const risksByPersonId = new Map<string, PersonRiskRow>()
-  for (const risk of risksResult.data ?? []) {
+  for (const risk of risks) {
     risksByPersonId.set(risk.person_id, risk)
   }
 
   const roomHistoryByPersonId = new Map<string, PersonRoomHistoryRow[]>()
-  for (const historyRow of roomHistoryResult.data ?? []) {
+  for (const historyRow of roomHistoryRows) {
     const existingRows = roomHistoryByPersonId.get(historyRow.person_id) ?? []
     existingRows.push(historyRow)
     roomHistoryByPersonId.set(historyRow.person_id, existingRows)
   }
 
-  return (personsResult.data ?? [])
+  return persons
     .map((person) => {
       const risk = risksByPersonId.get(person.id)
       const currentRooms = extractCurrentRooms(roomHistoryByPersonId.get(person.id) ?? [])
