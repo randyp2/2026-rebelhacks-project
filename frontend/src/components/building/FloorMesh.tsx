@@ -26,6 +26,8 @@ export type FloorMeshProps = {
 	yPosition: number;
 	isSelected: boolean;
 	hasSelection: boolean; // any floor is currently selected (drives fade of others)
+	slabColor: string;
+	emptyTileColor: string;
 	rooms: RoomRiskRow[]; // rooms for this floor's heatmap tiles
 	onClick: () => void;
 	onRoomSelect: (roomId: string) => void;
@@ -39,13 +41,14 @@ const SLAB_D = 9;
 const GRID_COLS = 10;
 const TILE_Y = SLAB_H / 2 + 0.04; // sits just above the top face
 const TILE_W = (SLAB_W / GRID_COLS) * 0.88;
-const NEUTRAL_SLAB_COLOR = new THREE.Color("#334155");
 const NO_RAYCAST: THREE.Object3D["raycast"] = () => null;
 
 const FloorMesh = memo(function FloorMesh({
 	yPosition,
 	isSelected,
 	hasSelection,
+	slabColor,
+	emptyTileColor,
 	rooms,
 	onClick,
 	onRoomSelect,
@@ -53,6 +56,7 @@ const FloorMesh = memo(function FloorMesh({
 	const isFocusedFloor = isSelected && hasSelection;
 	const canInteractWithRooms = isSelected && hasSelection;
 	const canInteractWithSlab = !hasSelection || isSelected;
+	const slabTone = useMemo(() => new THREE.Color(slabColor), [slabColor]);
 	// animRef targets the inner group so the outer group can hold the static y-position
 	const animRef = useRef<THREE.Group>(null);
 	const slabMatRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -153,8 +157,8 @@ const FloorMesh = memo(function FloorMesh({
 						<boxGeometry args={[SLAB_W, SLAB_H, SLAB_D]} />
 						<meshStandardMaterial
 							ref={slabMatRef}
-						color={NEUTRAL_SLAB_COLOR}
-						emissive={NEUTRAL_SLAB_COLOR}
+						color={slabTone}
+						emissive={slabTone}
 						emissiveIntensity={
 							isFocusedFloor ? 0 : hoveredSlab ? 0.35 : isSelected ? 0.2 : 0
 						}
@@ -174,7 +178,7 @@ const FloorMesh = memo(function FloorMesh({
 						const z = ((row + 0.5) / GRID_ROWS - 0.5) * SLAB_D;
 						const tileColor = room
 							? new THREE.Color(getRiskHexColor(room.risk_score))
-							: new THREE.Color("#1e293b");
+							: new THREE.Color(emptyTileColor);
 						const isHovered = room !== null && hoveredRoomId === room.room_id;
 
 						return (

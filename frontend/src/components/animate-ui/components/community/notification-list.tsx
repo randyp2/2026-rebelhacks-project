@@ -146,7 +146,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
 
   return (
     <motion.div
-      className="w-full space-y-3 rounded-2xl border border-white/10 bg-[#0f1623] p-3 shadow-md"
+      className="w-full space-y-3 rounded-2xl border border-border bg-card p-3 shadow-md"
       initial="collapsed"
       whileHover="expanded"
       onHoverStart={() => setIsExpanded(true)}
@@ -154,12 +154,12 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
     >
       <div>
         {visibleNotifications.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-            <div className="mb-1 flex items-center gap-2 text-slate-300">
+          <div className="rounded-xl border border-border bg-background px-4 py-3">
+            <div className="mb-1 flex items-center gap-2 text-foreground/90">
               <Bell className="size-4" />
               <h1 className="text-sm font-medium">No active alerts</h1>
             </div>
-            <div className="text-xs font-medium text-slate-500">All monitored rooms are clear.</div>
+            <div className="text-xs font-medium text-muted-foreground">All monitored rooms are clear.</div>
           </div>
         ) : (
           visibleNotifications.map((notification, i) => (
@@ -167,7 +167,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
               key={notification.id}
               initial="collapsed"
               animate={isExpanded ? "expanded" : "collapsed"}
-              className="relative rounded-xl border border-white/10 bg-[#172134] px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
+              className="relative rounded-xl border border-border bg-accent px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
               variants={getCardVariants(i)}
               transition={transition}
               style={{
@@ -175,15 +175,15 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
               }}
             >
               <div className="flex items-center justify-between">
-                <h1 className="text-sm font-medium text-slate-100">{notification.title}</h1>
+                <h1 className="text-sm font-medium text-foreground">{notification.title}</h1>
                 {notification.count && (
-                  <div className="flex items-center gap-0.5 text-xs font-medium text-slate-400">
+                  <div className="flex items-center gap-0.5 text-xs font-medium text-muted-foreground">
                     <RotateCcw className="size-3" />
                     <span>{notification.count}</span>
                   </div>
                 )}
               </div>
-              <div className="text-xs font-medium text-slate-500">
+              <div className="text-xs font-medium text-muted-foreground">
                 <span>{notification.time}</span>
                 &nbsp;•&nbsp;
                 <span>{notification.subtitle}</span>
@@ -194,12 +194,12 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex size-5 items-center justify-center rounded-full bg-blue-500 text-xs font-medium text-white">
+        <div className="flex size-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
           {alerts.length}
         </div>
         <span className="grid">
           <motion.span
-            className="col-start-1 row-start-1 text-sm font-medium text-slate-300"
+            className="col-start-1 row-start-1 text-sm font-medium text-foreground/90"
             variants={notificationTextVariants}
             transition={textSwitchTransition}
           >
@@ -208,7 +208,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
           <motion.button
             type="button"
             onClick={() => router.push("/dashboard/alerts")}
-            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 bg-transparent p-0 text-left text-sm font-medium text-slate-300"
+            className="col-start-1 row-start-1 flex cursor-pointer select-none items-center gap-1 bg-transparent p-0 text-left text-sm font-medium text-foreground/90"
             variants={viewAllTextVariants}
             transition={textSwitchTransition}
           >

@@ -89,6 +89,7 @@ export default function Building3D({
 	onRoomSelect,
 }: Building3DProps) {
 	const [bodyCursor, setBodyCursor] = useState<"default" | "pointer">("default");
+	const [isDarkTheme, setIsDarkTheme] = useState(true);
 
 	const isFloorView = selectedFloor !== null;
 	const floorOptions = useMemo(
@@ -135,8 +136,23 @@ export default function Building3D({
 		};
 	}, [bodyCursor]);
 
+	useEffect(() => {
+		const root = document.documentElement;
+		const updateThemeState = () => setIsDarkTheme(root.classList.contains("dark"));
+		updateThemeState();
+
+		const observer = new MutationObserver(updateThemeState);
+		observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+		return () => observer.disconnect();
+	}, []);
+
+	const floorSlabColor = isDarkTheme ? "#334155" : "#dbeafe";
+	const emptyTileColor = isDarkTheme ? "#1e293b" : "#eff6ff";
+	const floorLabelColor = isDarkTheme ? "#64748b" : "#64748b";
+	const emptyStateColor = isDarkTheme ? "#475569" : "#94a3b8";
+
 	return (
-		<div className="relative h-[820px] w-full bg-[#07090f]">
+		<div className="relative h-[820px] w-full bg-background">
 			{isFloorView && (
 				<button
 					type="button"
@@ -144,7 +160,7 @@ export default function Building3D({
 						setBodyCursor("default");
 						clearFocusedFloor();
 					}}
-					className="absolute right-3 top-3 z-10 cursor-pointer rounded-md border border-white/15 bg-[#111827]/85 px-3 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-[#1f2937]"
+					className="absolute right-3 top-3 z-10 cursor-pointer rounded-md border border-border bg-card/85 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
 				>
 					Exit floor view
 				</button>
@@ -164,8 +180,8 @@ export default function Building3D({
 											onClick={() => handleFloorSelection(floor)}
 											className={`h-4 w-4 cursor-pointer rounded-full border transition ${
 												active
-													? "border-white ring-2 ring-white/40"
-													: "border-slate-200/80"
+													? "border-white ring-2 ring-ring/40"
+													: "border-border"
 											}`}
 											style={{ backgroundColor: NEUTRAL_FLOOR_DOT }}
 										/>
@@ -175,7 +191,7 @@ export default function Building3D({
 											className={`cursor-pointer text-xs transition ${
 												active
 													? "font-semibold text-orange-200"
-													: "text-slate-200 hover:text-white"
+													: "text-foreground hover:text-accent-foreground"
 											}`}
 										>
 											Floor {floor}
@@ -183,7 +199,7 @@ export default function Building3D({
 									</div>
 									{idx < floorOptions.length - 1 && (
 										<div
-											className="ml-[7px] my-1.5 h-4 cursor-pointer border-l border-slate-400/80"
+											className="ml-[7px] my-1.5 h-4 cursor-pointer border-l border-border"
 											aria-hidden="true"
 										/>
 									)}
@@ -250,6 +266,8 @@ export default function Building3D({
 									yPosition={yPos}
 									isSelected={selectedFloor === fd.floor}
 									hasSelection={selectedFloor !== null}
+									slabColor={floorSlabColor}
+									emptyTileColor={emptyTileColor}
 									rooms={fd.rooms}
 									onClick={() => handleFloorSelection(fd.floor)}
 									onRoomSelect={onRoomSelect}
@@ -259,7 +277,7 @@ export default function Building3D({
 									<Text
 										position={[-6.2, yPos, 0]}
 										fontSize={0.28}
-										color="#64748b"
+										color={floorLabelColor}
 										anchorX="right"
 										anchorY="middle"
 									>
@@ -271,7 +289,7 @@ export default function Building3D({
 					})}
 
 					{floors.length === 0 && (
-						<Text position={[0, 0, 0]} fontSize={0.5} color="#475569">
+						<Text position={[0, 0, 0]} fontSize={0.5} color={emptyStateColor}>
 							No floor data
 						</Text>
 					)}

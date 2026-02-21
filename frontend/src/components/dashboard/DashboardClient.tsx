@@ -50,10 +50,10 @@ function AlertFeedFallback() {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="mb-3 flex shrink-0 items-center justify-between">
-				<span className="text-sm font-semibold text-slate-200">
+				<span className="text-sm font-semibold text-foreground">
 					Live Alerts
 				</span>
-				<span className="text-[10px] uppercase tracking-wider text-slate-500">
+				<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
 					Loading...
 				</span>
 			</div>
@@ -61,7 +61,7 @@ function AlertFeedFallback() {
 				{Array.from({ length: 3 }).map((_, idx) => (
 					<div
 						key={idx}
-						className="rounded-md border border-white/5 bg-white/[0.03] p-3"
+						className="rounded-md border border-border bg-accent/50 p-3"
 					>
 						<div className="mb-2 h-3 w-28 animate-pulse rounded bg-slate-700/40" />
 						<div className="mb-2 h-3 w-full animate-pulse rounded bg-slate-700/30" />
@@ -123,16 +123,16 @@ export default function DashboardClient({
 			{/* ── Left column: 3D view ── */}
 			<div className="flex min-w-0 flex-1 flex-col gap-4">
 				<div className="rounded-lg border border-primary/10 overflow-hidden h-[820px]">
-					<div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
-						<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+					<div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
+						<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
 							Building Overview
 						</span>
 						{selectedFloor ? (
-							<span className="text-[10px] text-slate-600">
+							<span className="text-[10px] text-muted-foreground">
 								— Floor {selectedFloor} selected · click again to deselect
 							</span>
 						) : (
-							<span className="text-[10px] text-slate-700">
+							<span className="text-[10px] text-muted-foreground">
 								— Click a floor to drill down
 							</span>
 						)}
@@ -154,8 +154,8 @@ export default function DashboardClient({
 						onMinimize={() => setIsFloorMapOpen(false)}
 					/>
 				) : selectedFloor === null ? (
-					<div className="flex items-center justify-center rounded-lg border border-dashed border-white/8 py-8">
-						<p className="text-xs italic text-slate-700">
+					<div className="flex items-center justify-center rounded-lg border border-dashed border-border py-8">
+						<p className="text-xs italic text-muted-foreground">
 							Select a floor to see the room layout
 						</p>
 					</div>
@@ -163,7 +163,7 @@ export default function DashboardClient({
 					<button
 						type="button"
 						onClick={() => setIsFloorMapOpen(true)}
-						className="flex items-center justify-center rounded-lg border border-dashed border-white/15 bg-[#0f1623] py-8 text-xs font-medium text-slate-300 transition hover:bg-[#111a29] hover:text-slate-100"
+						className="flex items-center justify-center rounded-lg border border-dashed border-border bg-card py-8 text-xs font-medium text-foreground/90 transition hover:bg-accent hover:text-foreground"
 					>
 						Click to expand floor map
 					</button>

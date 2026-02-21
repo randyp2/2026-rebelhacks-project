@@ -100,25 +100,25 @@ export default function FloorHeatmap({
   }, [hottestCluster])
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1623] p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-slate-200">Floor {floor}</span>
-        <span className="text-xs text-slate-500">— {rooms.length} rooms</span>
-        <span className="ml-auto text-[10px] text-slate-600 uppercase tracking-wider">
+        <span className="text-sm font-semibold text-foreground">Floor {floor}</span>
+        <span className="text-xs text-muted-foreground">— {rooms.length} rooms</span>
+        <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">
           Click room for details
         </span>
         {onMinimize && (
           <button
             type="button"
             onClick={onMinimize}
-            className="rounded border border-white/10 px-2 py-0.5 text-[10px] text-slate-300 transition hover:bg-white/5"
+            className="rounded border border-border px-2 py-0.5 text-[10px] text-foreground/90 transition hover:bg-accent"
           >
             Minimize
           </button>
         )}
       </div>
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-foreground/90">
         {hottestRoomSummary && (
           <span className="rounded border border-red-400/70 bg-red-500/10 px-2 py-0.5">
             Highest-risk room: {hottestRoomSummary}
@@ -149,19 +149,19 @@ export default function FloorHeatmap({
           ))}
         </div>
       ) : (
-        <p className="py-6 text-center text-xs text-slate-500 italic">
+        <p className="py-6 text-center text-xs text-muted-foreground italic">
           No rooms found on floor {floor}
         </p>
       )}
 
       {/* Legend */}
-      <div className="mt-4 flex items-center gap-4 text-[10px] text-slate-500">
+      <div className="mt-4 flex items-center gap-4 text-[10px] text-muted-foreground">
         <span className="uppercase tracking-wider">Risk</span>
-        <div className="flex items-center gap-1 text-slate-400">
+        <div className="flex items-center gap-1 text-muted-foreground">
           <span className="inline-block h-2.5 w-2.5 rounded-sm border border-red-400/90" />
           <span>Top room</span>
         </div>
-        <div className="flex items-center gap-1 text-slate-400">
+        <div className="flex items-center gap-1 text-muted-foreground">
           <span className="inline-block h-2.5 w-2.5 rounded-sm border border-amber-300/90 bg-amber-300/20" />
           <span>Top cluster</span>
         </div>

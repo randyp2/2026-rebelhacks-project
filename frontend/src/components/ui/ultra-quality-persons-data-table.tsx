@@ -73,7 +73,7 @@ function getRiskLevelClass(level: EnrichedPerson["normalizedRiskLevel"]) {
   if (level === "high") return "text-red-400"
   if (level === "medium") return "text-yellow-400"
   if (level === "low") return "text-emerald-400"
-  return "text-slate-400"
+  return "text-muted-foreground"
 }
 
 function formatRiskLevel(level: EnrichedPerson["normalizedRiskLevel"]) {
@@ -207,7 +207,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1623] p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
@@ -217,17 +217,17 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
             setCurrentPage(1)
           }}
           placeholder="Search by name, person id, room, or risk level..."
-          className="w-full rounded-md border border-white/10 bg-[#0a101b] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80"
+          className="w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80"
           aria-label="Search persons"
         />
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} persons
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-white/10">
-        <table className="min-w-full divide-y divide-white/10">
-          <thead className="bg-white/[0.03]">
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-accent/50">
             <tr>
               {[
                 { key: "full_name", label: "Person" },
@@ -241,7 +241,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
                   key={key}
                   scope="col"
                   onClick={() => requestSort(key as SortableKey)}
-                  className="cursor-pointer select-none px-4 py-2 text-left text-sm font-medium text-slate-300"
+                  className="cursor-pointer select-none px-4 py-2 text-left text-sm font-medium text-foreground/90"
                 >
                   <span className="inline-flex items-center">
                     {label}
@@ -249,45 +249,46 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Bookings (30d)</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">Entries (30d)</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground/90">Bookings (30d)</th>
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground/90">Entries (30d)</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-white/10">
+          <tbody className="divide-y divide-border">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-6 text-center text-sm text-muted-foreground">
                   No persons found.
                 </td>
               </tr>
             ) : (
               paginated.map((person) => (
-                <tr key={person.id} className="transition-colors hover:bg-white/[0.03]">
-                  <td className="px-4 py-3 text-sm text-slate-200">
+                <tr key={person.id} className="transition-colors hover:bg-accent/50">
+                  <td className="px-4 py-3 text-sm text-foreground">
                     <div className="font-semibold">{person.full_name}</div>
+                    <div className="text-xs text-muted-foreground">{person.id.slice(0, 8)}…</div>
                   </td>
                   <td
                     className={`whitespace-nowrap px-4 py-3 text-sm font-semibold ${getRiskLevelClass(person.normalizedRiskLevel)}`}
                   >
                     {formatRiskLevel(person.normalizedRiskLevel)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-200">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-foreground">
                     {person.risk_score === null ? "—" : formatRiskScore(person.risk_score)}
                   </td>
-                  <td className="max-w-xs px-4 py-3 text-sm text-slate-400">
+                  <td className="max-w-xs px-4 py-3 text-sm text-muted-foreground">
                     {formatCurrentRooms(person.current_rooms)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {formatTimestamp(person.last_room_purchase_timestamp)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {formatTimestamp(person.last_updated)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {person.bookings30d ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {person.trafficEntries30d ?? "—"}
                   </td>
                 </tr>

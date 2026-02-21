@@ -39,7 +39,7 @@ const RoomTile = memo(function RoomTile({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={`Room ${room.room_id}\nRisk: ${formatRiskScore(room.risk_score)}\nUpdated: ${new Date(room.last_updated).toLocaleTimeString()}`}
-      className="relative flex flex-col items-center justify-center rounded p-1.5 text-white transition-transform duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      className="relative flex flex-col items-center justify-center rounded p-1.5 text-primary-foreground transition-transform duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       style={{
         backgroundColor: bgColor,
         filter: hovered

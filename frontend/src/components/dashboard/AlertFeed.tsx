@@ -31,8 +31,8 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="mb-3 flex shrink-0 items-center justify-between">
-        <span className="text-sm font-semibold text-slate-200">Live Alerts</span>
-        <span className="text-[10px] uppercase tracking-wider text-slate-500">
+        <span className="text-sm font-semibold text-foreground">Live Alerts</span>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
           {alerts.length} recent
         </span>
       </div>
@@ -41,7 +41,7 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
       <div className="flex-1 space-y-2 overflow-y-auto pr-0.5">
         {alerts.length === 0 ? (
           <div className="flex items-center justify-center py-8">
-            <p className="text-xs italic text-slate-600">No alerts — all clear</p>
+            <p className="text-xs italic text-muted-foreground">No alerts — all clear</p>
           </div>
         ) : (
           alerts.map((alert) => {
@@ -56,11 +56,11 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
                   "rounded-md border p-3 text-xs transition-colors",
                   isCritical
                     ? "border-red-500/30 bg-red-950/20"
-                    : "border-white/5 bg-white/[0.03]",
+                    : "border-border bg-accent/50",
                 ].join(" ")}
               >
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="font-mono font-semibold text-slate-200">
+                  <span className="font-mono font-semibold text-foreground">
                     Room {alert.room_id}
                   </span>
                   <span className={`font-mono font-bold ${color}`}>
@@ -68,9 +68,9 @@ export default function AlertFeed({ alerts }: AlertFeedProps) {
                   </span>
                 </div>
                 {alert.explanation && (
-                  <p className="mb-1 leading-snug text-slate-400">{alert.explanation}</p>
+                  <p className="mb-1 leading-snug text-muted-foreground">{alert.explanation}</p>
                 )}
-                <p className="text-slate-600">{timeAgo(alert.timestamp)}</p>
+                <p className="text-muted-foreground">{timeAgo(alert.timestamp)}</p>
               </div>
             )
           })

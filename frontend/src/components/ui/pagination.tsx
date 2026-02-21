@@ -54,12 +54,12 @@ function PaginationLink({
       data-active={isActive}
       className={cn(
         "inline-flex items-center justify-center whitespace-nowrap rounded-md border text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         "aria-disabled:pointer-events-none aria-disabled:opacity-50",
         size === "default" ? "h-9 px-4 py-2" : "size-9",
         isActive
-          ? "border-blue-500 bg-blue-600 text-white hover:bg-blue-500"
-          : "border-white/15 bg-[#0a101b] text-slate-300 hover:bg-white/[0.06] hover:text-slate-100",
+          ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+          : "border-border bg-background/60 text-foreground/90 hover:bg-accent hover:text-foreground",
         className
       )}
       {...props}
@@ -109,7 +109,7 @@ function PaginationEllipsis({
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex size-9 items-center justify-center text-slate-500", className)}
+      className={cn("flex size-9 items-center justify-center text-muted-foreground", className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />

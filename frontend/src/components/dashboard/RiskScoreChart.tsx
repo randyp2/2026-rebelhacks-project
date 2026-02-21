@@ -35,8 +35,8 @@ function fmtTime(ts: string): string {
 export default function RiskScoreChart({ roomId, data }: RiskScoreChartProps) {
   if (!data.length) {
     return (
-      <div className="flex h-28 items-center justify-center rounded-lg border border-dashed border-white/10 bg-white/[0.02]">
-        <p className="text-xs italic text-slate-600">No history for room {roomId}</p>
+      <div className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border bg-accent/40">
+        <p className="text-xs italic text-muted-foreground">No history for room {roomId}</p>
       </div>
     )
   }
@@ -44,8 +44,8 @@ export default function RiskScoreChart({ roomId, data }: RiskScoreChartProps) {
   const chartData = data.map((d) => ({ time: fmtTime(d.timestamp), score: d.risk_score }))
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1623] p-4">
-      <p className="mb-3 text-[10px] uppercase tracking-wider text-slate-500">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="mb-3 text-[10px] uppercase tracking-wider text-muted-foreground">
         Risk history — Room {roomId}
       </p>
       <ResponsiveContainer width="100%" height={110}>

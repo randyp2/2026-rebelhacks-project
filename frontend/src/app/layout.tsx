@@ -23,7 +23,37 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <style>{`
+          html { background: #f8fafc; }
+          @media (prefers-color-scheme: dark) {
+            html { background: #07090f; }
+          }
+          html.dark { background: #07090f; }
+          html:not(.dark) { background: #f8fafc; }
+          body { background: transparent; }
+        `}</style>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var key = "dashboard_theme_mode";
+                  var stored = localStorage.getItem(key);
+                  var mode = (stored === "night" || stored === "system" || stored === "day") ? stored : "system";
+                  var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                  var dark = mode === "night" || (mode === "system" && prefersDark);
+                  var root = document.documentElement;
+                  root.classList.toggle("dark", dark);
+                  root.style.backgroundColor = dark ? "#07090f" : "#f8fafc";
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

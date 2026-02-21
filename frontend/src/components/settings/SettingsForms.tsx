@@ -45,17 +45,17 @@ export default function SettingsForms({
 
 	return (
 		<div className="grid w-full max-w-3xl gap-4">
-			<Card className="border-white/10 bg-black/20 text-slate-100">
+			<Card className="border-border bg-accent/40 text-foreground">
 				<CardHeader>
 					<CardTitle>Hotel</CardTitle>
-					<CardDescription className="text-slate-400">
+					<CardDescription className="text-muted-foreground">
 						Your current property membership details.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<form action={updateHotelSettings} className="space-y-3">
-						<div className="rounded-md border border-white/10 bg-black/20 px-3 py-3">
-							<Label htmlFor="hotel_name" className="text-xs text-slate-400">
+						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+							<Label htmlFor="hotel_name" className="text-xs text-muted-foreground">
 								Hotel Name
 							</Label>
 							<Input
@@ -64,22 +64,22 @@ export default function SettingsForms({
 								value={hotelName}
 								onChange={(e) => setHotelName(e.target.value)}
 								placeholder="Enter hotel name"
-								className="mt-2 border-white/15 bg-[#0f1623] text-slate-100"
+								className="mt-2 border-border bg-card text-foreground"
 								disabled={!hasMembership}
 								required
 							/>
 						</div>
 
-						<div className="rounded-md border border-white/10 bg-black/20 px-3 py-3">
-							<div className="text-xs text-slate-400">Role</div>
-							<div className="mt-2 text-sm text-slate-100">
+						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+							<div className="text-xs text-muted-foreground">Role</div>
+							<div className="mt-2 text-sm text-foreground">
 								{membershipRole ?? "N/A"}
 							</div>
 						</div>
 
 						<Button
 							type="submit"
-							className="cursor-pointer bg-blue-600 text-white hover:bg-blue-500"
+							className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
 							disabled={!hasMembership || !isHotelDirty}
 						>
 							Save Hotel Settings
@@ -88,14 +88,14 @@ export default function SettingsForms({
 				</CardContent>
 			</Card>
 
-			<Card className="border-white/10 bg-black/20 text-slate-100">
+			<Card className="border-border bg-accent/40 text-foreground">
 				<CardHeader>
 					<CardTitle>Account</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<form action={updateAccountSettings} className="space-y-3">
-						<div className="rounded-md border border-white/10 bg-black/20 px-3 py-3">
-							<Label htmlFor="full_name" className="text-xs text-slate-400">
+						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+							<Label htmlFor="full_name" className="text-xs text-muted-foreground">
 								Name
 							</Label>
 							<Input
@@ -104,18 +104,18 @@ export default function SettingsForms({
 								value={fullName}
 								onChange={(e) => setFullName(e.target.value)}
 								placeholder="Enter your name"
-								className="mt-2 border-white/15 bg-[#0f1623] text-slate-100"
+								className="mt-2 border-border bg-card text-foreground"
 								required
 							/>
 						</div>
-						<div className="rounded-md border border-white/10 bg-black/20 px-3 py-3">
-							<Label htmlFor="email" className="text-xs text-slate-400">
+						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+							<Label htmlFor="email" className="text-xs text-muted-foreground">
 								Email
 							</Label>
 							<Input
 								id="email"
 								value={email}
-								className="mt-2 border-white/15 bg-[#0f1623] text-slate-300"
+								className="mt-2 border-border bg-card text-foreground/90"
 								readOnly
 								disabled
 							/>
@@ -123,7 +123,7 @@ export default function SettingsForms({
 
 						<Button
 							type="submit"
-							className="cursor-pointer bg-blue-600 text-white hover:bg-blue-500"
+							className="cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
 							disabled={!isAccountDirty}
 						>
 							Save Account Settings

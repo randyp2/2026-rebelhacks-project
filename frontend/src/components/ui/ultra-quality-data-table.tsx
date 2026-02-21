@@ -130,7 +130,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0f1623] p-4">
+    <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
@@ -140,17 +140,17 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
             setCurrentPage(1)
           }}
           placeholder="Search by room id, tied person, or explanation..."
-          className="w-full rounded-md border border-white/10 bg-[#0a101b] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-72"
+          className="w-full rounded-md border border-border bg-background/60 px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-72"
           aria-label="Search alerted rooms"
         />
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-muted-foreground">
           Showing {paginated.length} of {filtered.length} alerted rooms
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-white/10">
-        <table className="min-w-full divide-y divide-white/10">
-          <thead className="bg-white/[0.03]">
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-accent/50">
             <tr>
               {[
                 { key: "room_id", label: "Room" },
@@ -162,7 +162,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
                   key={key}
                   scope="col"
                   onClick={key === "tied_persons" ? undefined : () => requestSort(key as SortableKey)}
-                  className={`select-none px-4 py-2 text-left text-sm font-medium text-slate-300 ${
+                  className={`select-none px-4 py-2 text-left text-sm font-medium text-foreground/90 ${
                     key === "tied_persons" ? "" : "cursor-pointer"
                   }`}
                 >
@@ -174,16 +174,16 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-2 text-left text-sm font-medium text-slate-300">
+              <th className="px-4 py-2 text-left text-sm font-medium text-foreground/90">
                 Explanation
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-white/10">
+          <tbody className="divide-y divide-border">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted-foreground">
                   No alerted rooms found.
                 </td>
               </tr>
@@ -193,22 +193,22 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
                 const riskColor = getRiskColor(riskLevel)
 
                 return (
-                  <tr key={alert.id} className="transition-colors hover:bg-white/[0.03]">
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-200">
+                  <tr key={alert.id} className="transition-colors hover:bg-accent/50">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-foreground">
                       {alert.room_id ?? "Unassigned"}
                     </td>
                     <td className={`whitespace-nowrap px-4 py-3 text-sm font-semibold ${riskColor}`}>
                       {formatRiskScore(alert.risk_score)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-300">
+                    <td className="px-4 py-3 text-sm text-foreground/90">
                       {alert.tied_person_names && alert.tied_person_names.length > 0
                         ? alert.tied_person_names.join(", ")
                         : "No linked person"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                       {new Date(alert.timestamp).toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-400">
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
                       {alert.explanation ?? "No explanation provided"}
                     </td>
                   </tr>

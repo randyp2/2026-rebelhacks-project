@@ -77,23 +77,23 @@ export default function RoomDetailsPanel({
     if (normalized === "LOW") {
       return "text-emerald-200 bg-emerald-500/20 border border-emerald-400/40"
     }
-    return "text-slate-200 bg-white/10 border border-white/20"
+    return "text-foreground bg-accent/40 border border-border"
   }
 
   return (
-    <aside className="flex flex-col rounded-lg border border-white/10 bg-[#0f1623] overflow-hidden">
+    <aside className="flex flex-col rounded-lg border border-border bg-card overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3 shrink-0">
+      <header className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-slate-500">Room</p>
-          <p className="font-mono text-xl font-bold text-slate-100 leading-tight">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Room</p>
+          <p className="font-mono text-xl font-bold text-foreground leading-tight">
             {room.room_id}
           </p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close panel"
-          className="rounded p-1 text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
+          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -101,8 +101,8 @@ export default function RoomDetailsPanel({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Risk score badge */}
-        <div className="rounded-lg bg-white/5 px-4 py-3">
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">
+        <div className="rounded-lg bg-accent/40 px-4 py-3">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             Current Risk Score
           </p>
           <p className={`font-mono text-4xl font-bold ${levelColor}`}>
@@ -117,14 +117,14 @@ export default function RoomDetailsPanel({
 
         {/* Meta grid */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-white/5 p-3">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">Floor</p>
-            <p className="mt-1 text-sm font-semibold text-slate-200">{room.floor}</p>
+          <div className="rounded-lg bg-accent/40 p-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Floor</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{room.floor}</p>
           </div>
-          <div className="rounded-lg bg-white/5 p-3">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">Updated</p>
-            <p className="mt-1 text-sm font-semibold text-slate-200 flex items-center gap-1">
-              <Clock className="h-3 w-3 text-slate-500" />
+          <div className="rounded-lg bg-accent/40 p-3">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Updated</p>
+            <p className="mt-1 text-sm font-semibold text-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3 text-muted-foreground" />
               {timeAgo(room.last_updated)}
             </p>
           </div>
@@ -133,7 +133,7 @@ export default function RoomDetailsPanel({
         {/* People tied to this room */}
         {tiedPeople.length > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <Users className="h-3 w-3" />
               People Tied to Room
             </p>
@@ -141,9 +141,9 @@ export default function RoomDetailsPanel({
               {tiedPeople.map((person) => (
                 <li
                   key={person.name}
-                  className="flex items-center justify-between rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-2"
+                  className="flex items-center justify-between rounded-md border border-border bg-accent/50 px-2.5 py-2"
                 >
-                  <span className="text-sm font-bold text-slate-100">{person.name}</span>
+                  <span className="text-sm font-bold text-foreground">{person.name}</span>
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${getPersonRiskBadgeClass(person.riskLevel)}`}
                   >
@@ -157,12 +157,12 @@ export default function RoomDetailsPanel({
 
         {/* Alerts for this room */}
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
             <AlertTriangle className="h-3 w-3" />
             Recent Alerts
           </p>
           {roomAlerts.length === 0 ? (
-            <p className="text-xs text-slate-600 italic">No recent alerts for this room.</p>
+            <p className="text-xs text-muted-foreground italic">No recent alerts for this room.</p>
           ) : (
             <ul className="space-y-2">
               {roomAlerts.map((alert) => {
@@ -172,16 +172,16 @@ export default function RoomDetailsPanel({
                 return (
                   <li
                     key={alert.id}
-                    className="rounded-lg border border-white/5 bg-white/[0.03] p-3 text-xs"
+                    className="rounded-lg border border-border bg-accent/50 p-3 text-xs"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <span className={`font-mono font-bold ${aColor}`}>
                         {formatRiskScore(alert.risk_score)}
                       </span>
-                      <span className="text-slate-500">{timeAgo(alert.timestamp)}</span>
+                      <span className="text-muted-foreground">{timeAgo(alert.timestamp)}</span>
                     </div>
                     {explanation && (
-                      <p className="text-slate-400 leading-snug">{explanation}</p>
+                      <p className="text-muted-foreground leading-snug">{explanation}</p>
                     )}
                   </li>
                 )

@@ -1,4 +1,3 @@
-import Header from "@/components/layout/Header";
 import SettingsForms from "@/components/settings/SettingsForms";
 import { createServerSupabaseClient } from "@/utils/supabase/server";
 
@@ -29,23 +28,14 @@ export default async function SettingsPage() {
 		: { data: null };
 
 	return (
-		<div className="flex h-full flex-col overflow-hidden">
-			<Header
-				title="Settings"
-				userFullName={userFullName}
-				userAvatarUrl={null}
-				unreadAlertCount={0}
+		<div className="flex h-full items-start justify-center overflow-auto p-6">
+			<SettingsForms
+				initialHotelName={property?.name ?? ""}
+				membershipRole={membership?.role ?? null}
+				hasMembership={Boolean(membership)}
+				initialFullName={userFullName ?? ""}
+				email={user?.email ?? ""}
 			/>
-
-			<div className="flex h-full items-start justify-center overflow-auto p-6">
-				<SettingsForms
-					initialHotelName={property?.name ?? ""}
-					membershipRole={membership?.role ?? null}
-					hasMembership={Boolean(membership)}
-					initialFullName={userFullName ?? ""}
-					email={user?.email ?? ""}
-				/>
-			</div>
 		</div>
 	);
 }
