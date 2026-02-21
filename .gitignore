@@ -51,3 +51,7 @@ frontend/build
 
 # pnpm
 .pnpm-store
+
+# python
+__pycache__/
+*.py[cod]
