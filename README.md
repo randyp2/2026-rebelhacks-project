@@ -1,287 +1,141 @@
-📄 Product Requirements Document (Final)
-SafeStay AI
-1️⃣ Product Overview
-🎯 Goal
+# HotelGuard (SafeStay AI)
 
-Build a privacy-safe, multi-signal anomaly detection system for Las Vegas hotels that aggregates operational metadata and computer vision–derived activity signals to generate real-time room-level risk scores.
+HotelGuard is a hotel risk-monitoring dashboard that combines:
+- Operational webhook events (PMS + housekeeping)
+- CV frame ingestion + Gemini-based analysis
+- Room/person risk scoring surfaced in a Next.js dashboard
 
-The system:
+## Screenshots
 
-Does not identify individuals
+### Overview (Collapsed Floor View)
+![Overview collapsed floor view](docs/images/overview-collapsed.png)
 
-Detects behavioral patterns across multiple signals
+### Alerts (Video Analysis)
+![Alerts video analysis](docs/images/alerts-analysis.png)
 
-Flags anomalies that warrant human review
+### Overview (Expanded Floor + Room Detail)
+![Overview expanded floor with room detail](docs/images/overview-floor-expanded.png)
 
-2️⃣ Problem Statement
+## Repo Layout
 
-In Las Vegas:
+- `frontend/` - Next.js dashboard and API routes
+- `cv/` - Python CV uploader/utilities
+- `supabase/functions/` - Supabase Edge Functions (`score-risk`, `ingest-cv`)
+- `people_counter.py` - standalone YOLO tracking/counting script
 
-High staff turnover reduces institutional knowledge
+## Prerequisites
 
-Red flags often look “normal” (cash payments, late-night traffic)
+- Node.js 20+
+- `pnpm`
+- Python 3.10+
+- A Supabase project (URL, anon key, service role key)
+- Gemini API key (for CV analysis routes)
 
-Incidents are fragmented across properties
+## 1) Run the Frontend
 
-Detection relies heavily on human intuition
+```bash
+cd frontend
+pnpm install
+```
 
-Single signals are weak indicators
+Create `frontend/.env.local`:
 
-Solution Approach:
-Correlate multiple weak signals into stronger anomaly patterns.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 
-3️⃣ Solution Overview
+CV_API_KEY=<shared-secret-for-cv-uploader>
+GEMINI_API_KEY=<your-gemini-key>
 
-SafeStay AI combines:
+# Optional
+GEMINI_MODEL=gemini-2.5-flash
+CV_HIGH_RISK_THRESHOLD=10
+CV_EVIDENCE_ENABLED=true
+CV_EVIDENCE_SUSPICION_THRESHOLD=0.15
+CV_EVIDENCE_MAX_FRAMES_PER_REQUEST=5
+HOTELGUARD_ADMIN_TOKEN=<token-for-/api/ingest/canonical>
+HOTELGUARD_ADMIN_EMAILS=admin@example.com
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
 
-Synthetic hotel operational signals
+Start dev server:
 
-Computer vision–derived analytics for linen tracking and human-verified timestamped footage during keycard usage
+```bash
+pnpm dev
+```
 
-Weighted risk scoring engine
+Open `http://localhost:3000`.
 
-Real-time visualization dashboard
+## 2) Apply Database Migrations
 
-One signal = normal
-Multiple correlated signals over time = anomaly
+Migrations are in `frontend/supabase/migrations/`.
+Apply them to your Supabase project before using ingestion/risk features.
 
-4️⃣ Core Features
-4.1 Multi-Signal Risk Engine
-Signals Tracked
-Operational Metadata
+## 3) (Optional) Run Webhook Test Flows
 
-Short-duration bookings
+From `frontend/`:
 
-Same payment token across rooms (hashed only)
+```bash
+bash scripts/test-webhooks.sh
+bash scripts/test-ingestion.sh
+```
 
-Excessive keycard resets
+Optional overrides:
+- `BASE_URL` (default `http://localhost:3000`)
+- `PROPERTY_ID`
+- `PMS_SECRET`
+- `HK_SECRET`
+- `HOTELGUARD_ADMIN_TOKEN`
 
-Frequent linen/towel requests
+## 4) (Optional) Run Python CV Uploader
 
-Housekeeping refusal with supply requests
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r cv/requirements.txt
+```
 
-Computer Vision Metadata
+Set env vars (shell or `.env`):
 
-Linen request detection
+```bash
+NEXT_API_BASE_URL=http://localhost:3000
+CV_API_KEY=<same as frontend/.env.local>
+ROOM_ID=8044
+CAMERA_SOURCE=0
+# or CAMERA_SOURCE=/absolute/path/to/video.mp4
+```
 
-Person count near room doorway
+Run uploader:
 
-Entry frequency per hour
+```bash
+python cv/uploader.py
+```
 
-Time-of-day traffic spikes
+## 5) (Optional) Reset CV Data
 
-Functional Requirements
-Requirement	Obstacle?	Notes
-Store hotel events	❌ No	Standard Postgres tables
-Store CV metadata	❌ No	No video storage
-Weighted scoring logic	❌ No	Edge function
-Rolling time-window aggregation	⚠️ Moderate	Requires careful query design
-Threshold-based alerts	❌ No	Simple logic
-Real-time UI updates	❌ No	Supabase Realtime
-5️⃣ Computer Vision Specification
-🎥 What the Camera Records
+TypeScript reset script:
 
-The system does not store video footage.
+```bash
+cd frontend
+pnpm dlx tsx scripts/reset-cv-data.tsx
+```
 
-It extracts and stores only:
+Python reset script:
 
-Person count
+```bash
+python cv/reset_cv_data.py
+```
 
-Entry frequency
+## Standalone People Counter (Optional)
 
-Timestamp
+Example:
 
-Room zone
+```bash
+python people_counter.py --video input.mp4 --show --room-id 8044 --cv-api-key <CV_API_KEY>
+```
 
-Example Stored Record
-room_id: 304
-timestamp: 2026-03-01T01:32:00
-person_count: 3
-entries_last_hour: 12
-🚫 What It Does NOT Record
+## Notes
 
-Faces
-
-Identity
-
-Biometrics
-
-Audio
-
-Images
-
-Demographic attributes
-
-CV Pipeline
-
-YOLOv8 detects “person” objects
-
-Bounding boxes counted
-
-Room zone mapped
-
-Metadata generated
-
-Frames discarded
-
-Metadata sent to Supabase
-
-6️⃣ Risk Scoring Model
-Scoring Formula
-Risk Score = Σ(weight × frequency × time_decay)
-Example Weights
-Signal	Weight
-Short stay	2
-Linen spike	3
-Key resets	3
-CV traffic anomaly	5
-7️⃣ Technical Architecture
-Stack
-Frontend
-
-Next.js (App Router)
-
-Recharts
-
-Supabase Realtime
-
-Backend
-
-Supabase (Postgres + Auth + Realtime)
-
-Supabase Edge Functions (risk scoring)
-
-REST endpoint for CV ingestion
-
-Computer Vision
-
-Python
-
-YOLOv8
-
-OpenCV
-
-8️⃣ Database Schema (Updated)
-hotel_events
-
-Stores operational hotel event data tied to a room and guest.
-
-id
-
-room_id
-
-guest_name
-
-event_type
-
-value
-
-timestamp
-
-cv_events
-
-id
-
-room_id
-
-person_count
-
-entry_count
-
-timestamp
-
-room_risk
-
-room_id
-
-risk_score
-
-last_updated
-
-alerts
-
-room_id
-
-risk_score
-
-explanation
-
-timestamp
-
-persons
-
-Stores unique individuals who have booked rooms.
-
-id
-
-full_name
-
-last_room_purchase_timestamp
-
-person_room_history
-
-Tracks historical room purchases and whether the room was flagged at the time.
-
-id
-
-person_id (FK → persons.id)
-
-room_id
-
-purchase_timestamp
-
-was_flagged_dangerous (boolean)
-
-risk_score_at_time
-
-Design Notes
-
-persons enables longitudinal tracking across stays.
-
-person_room_history preserves the historical risk state at time of booking.
-
-was_flagged_dangerous ensures explainability and auditability.
-
-No biometric or facial data is stored.
-
-9️⃣ Testing Strategy (Hackathon)
-
-Because real hotel data is inaccessible:
-
-We will:
-
-Generate statistically realistic synthetic hotel data
-
-Pre-run YOLO on hallway footage
-
-Store detection metadata
-
-Replay event stream live during demo
-
-🔟 Ethical & Legal Positioning
-
-The system:
-
-Does not perform facial recognition
-
-Does not store biometric data
-
-Detects behavioral anomalies only
-
-Requires human review before action
-
-🏁 Final Positioning
-
-SafeStay AI is a privacy-safe behavioral anomaly detection platform that:
-
-Aggregates multiple weak signals
-
-Uses computer vision responsibly
-
-Generates explainable risk patterns
-
-Operates without identity tracking
-
-Built With
-
-Next.js + Supabase + YOLO
+- `score-risk` is a Supabase Edge Function under `supabase/functions/score-risk`.
+- The frontend CV ingest route attempts to invoke `score-risk`; deploy/configure it in Supabase for full end-to-end scoring.
