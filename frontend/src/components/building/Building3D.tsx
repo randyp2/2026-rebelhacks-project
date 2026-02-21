@@ -92,7 +92,7 @@ export default function Building3D({
 
 	const isFloorView = selectedFloor !== null;
 	const floorOptions = useMemo(
-		() => [...floors].sort((a, b) => a.floor - b.floor),
+		() => [...floors].sort((a, b) => b.floor - a.floor),
 		[floors],
 	);
 
