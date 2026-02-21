@@ -17,7 +17,7 @@ type SortableKey =
   | "full_name"
   | "risk_level"
   | "risk_score"
-  | "card_swipe_count"
+  | "current_rooms"
   | "last_room_purchase_timestamp"
   | "last_updated"
 
@@ -27,8 +27,7 @@ type UltraQualityPersonsDataTableProps = {
 
 type EnrichedPerson = PersonWithRiskRow & {
   normalizedRiskLevel: "low" | "medium" | "high" | "unknown"
-  cardSwipeCount: number
-  uniqueCardCount: number
+  currentRoomsCount: number
   bookings30d: number | null
   trafficEntries30d: number | null
 }
@@ -51,24 +50,6 @@ function parseNumeric(value: unknown): number | null {
     if (Number.isFinite(parsed)) return parsed
   }
   return null
-}
-
-function extractCardStats(cardHistory: PersonWithRiskRow["card_history"]) {
-  if (!Array.isArray(cardHistory)) return { total: 0, unique: 0 }
-
-  const uniqueCardHashes = new Set<string>()
-  for (const cardEntry of cardHistory) {
-    if (!isRecord(cardEntry)) continue
-    const cardHash = cardEntry.card_hash
-    if (typeof cardHash === "string" && cardHash.length > 0) {
-      uniqueCardHashes.add(cardHash)
-    }
-  }
-
-  return {
-    total: cardHistory.length,
-    unique: uniqueCardHashes.size,
-  }
 }
 
 function readBreakdownMetric(
@@ -107,6 +88,11 @@ function formatTimestamp(value: string | null) {
   return date.toLocaleString()
 }
 
+function formatCurrentRooms(rooms: string[]) {
+  if (rooms.length === 0) return "—"
+  return rooms.join(", ")
+}
+
 export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDataTableProps) {
   const [search, setSearch] = useState("")
   const [sortConfig, setSortConfig] = useState<{
@@ -121,12 +107,10 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
 
   const enrichedRows = useMemo<EnrichedPerson[]>(() => {
     return persons.map((person) => {
-      const { total, unique } = extractCardStats(person.card_history)
       return {
         ...person,
         normalizedRiskLevel: normalizeRiskLevel(person.risk_level),
-        cardSwipeCount: total,
-        uniqueCardCount: unique,
+        currentRoomsCount: person.current_rooms.length,
         bookings30d: readBreakdownMetric(person.score_breakdown, "bookings_30d"),
         trafficEntries30d: readBreakdownMetric(person.score_breakdown, "traffic_entries_30d"),
       }
@@ -141,6 +125,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
       return (
         person.full_name.toLowerCase().includes(term) ||
         person.id.toLowerCase().includes(term) ||
+        person.current_rooms.some((roomId) => roomId.toLowerCase().includes(term)) ||
         person.normalizedRiskLevel.includes(term)
       )
     })
@@ -162,9 +147,9 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
       } else if (key === "risk_score") {
         leftValue = left.risk_score ?? -1
         rightValue = right.risk_score ?? -1
-      } else if (key === "card_swipe_count") {
-        leftValue = left.cardSwipeCount
-        rightValue = right.cardSwipeCount
+      } else if (key === "current_rooms") {
+        leftValue = left.currentRoomsCount
+        rightValue = right.currentRoomsCount
       } else if (key === "last_room_purchase_timestamp") {
         leftValue = left.last_room_purchase_timestamp
           ? new Date(left.last_room_purchase_timestamp).getTime()
@@ -231,7 +216,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
             setSearch(event.target.value)
             setCurrentPage(1)
           }}
-          placeholder="Search by name, person id, or risk level..."
+          placeholder="Search by name, person id, room, or risk level..."
           className="w-full rounded-md border border-white/10 bg-[#0a101b] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80"
           aria-label="Search persons"
         />
@@ -248,7 +233,7 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
                 { key: "full_name", label: "Person" },
                 { key: "risk_level", label: "Risk Level" },
                 { key: "risk_score", label: "Risk Score" },
-                { key: "card_swipe_count", label: "Card Swipes" },
+                { key: "current_rooms", label: "Current Rooms" },
                 { key: "last_room_purchase_timestamp", label: "Last Stay" },
                 { key: "last_updated", label: "Risk Updated" },
               ].map(({ key, label }) => (
@@ -291,8 +276,8 @@ export function UltraQualityPersonsDataTable({ persons }: UltraQualityPersonsDat
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-slate-200">
                     {person.risk_score === null ? "—" : formatRiskScore(person.risk_score)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
-                    {person.cardSwipeCount} swipes ({person.uniqueCardCount} cards)
+                  <td className="max-w-xs px-4 py-3 text-sm text-slate-400">
+                    {formatCurrentRooms(person.current_rooms)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
                     {formatTimestamp(person.last_room_purchase_timestamp)}
