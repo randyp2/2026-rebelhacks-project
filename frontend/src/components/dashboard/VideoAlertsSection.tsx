@@ -8,6 +8,8 @@ import { useVideoAlerts } from "@/hooks/useVideoAlerts"
 import { createClient } from "@/utils/supabase/client"
 import type { CvRiskEvidenceRow, CvVideoSummaryRow } from "@/types/database"
 
+type IngestProgress = { stage: 'uploading' | 'analyzing' | 'finalizing' }
+
 type VideoAlertsSectionProps = {
 	initialSummaries: CvVideoSummaryRow[]
 	initialEvidence: CvRiskEvidenceRow[]
@@ -92,8 +94,14 @@ function resolveAssociatedRoomId(
 	return fallback?.room_id ?? null
 }
 
+const STAGE_LABEL: Record<string, string> = {
+	uploading:  'Receiving frame batch…',
+	analyzing:  'Gemini AI analyzing frames…',
+	finalizing: 'Generating video summary…',
+}
+
 /** Skeleton card shown while uploader frames are arriving but summary isn't ready yet */
-function VideoSkeletonCard() {
+function VideoSkeletonCard({ stage = 'uploading' }: { stage?: string }) {
 	return (
 		<article className="rounded-lg border border-l-2 border-border border-l-blue-500/50 bg-card p-4">
 			{/* Header row */}
@@ -109,7 +117,7 @@ function VideoSkeletonCard() {
 				<div className="h-5 w-20 animate-pulse rounded border border-border bg-muted/40" />
 			</div>
 
-			{/* Analyzing label */}
+			{/* Stage label */}
 			<div className="mb-3 flex items-center gap-1.5">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -126,7 +134,7 @@ function VideoSkeletonCard() {
 					<path d="M21 12a9 9 0 1 1-6.219-8.56" />
 				</svg>
 				<span className="text-[11px] font-medium text-blue-400">
-					Gemini AI analyzing frames…
+					{STAGE_LABEL[stage] ?? 'Processing…'}
 				</span>
 			</div>
 
@@ -180,6 +188,8 @@ export default function VideoAlertsSection({
 	// Drives the skeleton card display.
 	const [processingVideoIds, setProcessingVideoIds] = useState<Set<string>>(new Set())
 	const seenProcessingIds = useRef<Set<string>>(new Set())
+
+	const [progressMap, setProgressMap] = useState<Map<string, IngestProgress>>(new Map())
 
 	// Remove from processingVideoIds when the summary for that video arrives.
 	useEffect(() => {
@@ -257,6 +267,27 @@ export default function VideoAlertsSection({
 	}, [])
 
 	useEffect(() => {
+		const supabase = createClient()
+		const channel = supabase
+			.channel("cv-ingest-progress")
+			.on("postgres_changes",
+				{ event: "*", schema: "public", table: "cv_ingest_progress" },
+				(payload) => {
+					if (payload.eventType === 'DELETE') {
+						const old = payload.old as { video_id?: string }
+						if (old.video_id) setProgressMap(prev => { const m = new Map(prev); m.delete(old.video_id!); return m })
+					} else {
+						const row = payload.new as { video_id?: string; stage?: string }
+						if (row.video_id && row.stage) {
+							setProgressMap(prev => new Map(prev).set(row.video_id!, { stage: row.stage as IngestProgress['stage'] }))
+						}
+					}
+				})
+			.subscribe()
+		return () => { supabase.removeChannel(channel) }
+	}, [])
+
+	useEffect(() => {
 		if (!zoomedImage) return
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (event.key === "Escape") {
@@ -303,7 +334,7 @@ export default function VideoAlertsSection({
 				<div className="grid gap-3 md:grid-cols-2">
 					{/* Skeleton cards for videos being analyzed */}
 					{pendingIds.map((id) => (
-						<VideoSkeletonCard key={id} />
+						<VideoSkeletonCard key={id} stage={progressMap.get(id)?.stage ?? 'uploading'} />
 					))}
 
 						{/* Completed summary cards */}
