@@ -50,11 +50,31 @@ function buildRoomToNames(persons: PersonWithRiskRow[]): Map<string, string[]> {
   return roomToNames
 }
 
-function normalizeAlert(alert: AlertRow, roomToNames: Map<string, string[]>): AlertWithTiedPersons {
+function buildPersonIdToName(persons: PersonWithRiskRow[]): Map<string, string> {
+  const personIdToName = new Map<string, string>()
+  for (const person of persons) {
+    if (person.full_name.trim().length === 0) continue
+    personIdToName.set(person.id, person.full_name)
+  }
+  return personIdToName
+}
+
+function normalizeAlert(
+  alert: AlertRow,
+  personIdToName: Map<string, string>,
+  roomToNames: Map<string, string[]>
+): AlertWithTiedPersons {
+  const directPersonName = alert.person_id ? personIdToName.get(alert.person_id) : null
+
   return {
     ...alert,
     explanation: normalizeExplanation(alert.explanation),
-    tied_person_names: alert.room_id ? (roomToNames.get(alert.room_id) ?? []) : [],
+    tied_person_names:
+      directPersonName !== null && directPersonName !== undefined
+        ? [directPersonName]
+        : alert.room_id
+          ? (roomToNames.get(alert.room_id) ?? [])
+          : [],
   }
 }
 
@@ -65,8 +85,11 @@ export default async function AlertsPage() {
     getPersonsWithRisk(supabase).catch(() => []),
   ])
 
+  const personIdToName = buildPersonIdToName(persons)
   const roomToNames = buildRoomToNames(persons)
-  const normalizedAlerts = alerts.map((alert) => normalizeAlert(alert, roomToNames))
+  const normalizedAlerts = alerts.map((alert) =>
+    normalizeAlert(alert, personIdToName, roomToNames)
+  )
 
   return (
     <div className="h-full overflow-auto p-4">
