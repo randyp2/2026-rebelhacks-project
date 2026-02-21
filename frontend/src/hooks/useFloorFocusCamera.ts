@@ -19,7 +19,7 @@ type UseFloorFocusCameraArgs = {
   cameraY: number;
   cameraZ: number;
   floorGap: number;
-  onFloorSelect: (floor: number) => void;
+  onFloorSelect: (floor: number | null) => void;
 };
 
 export function useFloorFocusCamera({
@@ -108,7 +108,7 @@ export function useFloorFocusCamera({
       setRestorePose(nextPose);
     }
     preFocusPoseRef.current = null;
-    onFloorSelect(selectedFloor);
+    onFloorSelect(null);
   };
 
   const handleFloorSelection = (floor: number) => {

@@ -94,13 +94,9 @@ export default function DashboardClient({
 		[rooms, selectedFloor],
 	);
 
-	const handleFloorSelect = (floor: number) => {
-		// Toggle: clicking the same floor again deselects it
-		setSelectedFloor((prev) => {
-			const next = prev === floor ? null : floor;
-			if (next === null) setIsFloorMapOpen(false);
-			return next;
-		});
+	const handleFloorSelect = (floor: number | null) => {
+		setSelectedFloor(floor);
+		if (floor === null) setIsFloorMapOpen(false);
 		setSelectedRoom(null);
 	};
 

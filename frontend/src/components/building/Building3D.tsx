@@ -26,7 +26,7 @@ const NEUTRAL_FLOOR_DOT = "#64748b";
 type Building3DProps = {
 	floors: FloorData[];
 	selectedFloor: number | null;
-	onFloorSelect: (floor: number) => void;
+	onFloorSelect: (floor: number | null) => void;
 	onRoomSelect: (roomId: string) => void;
 };
 
