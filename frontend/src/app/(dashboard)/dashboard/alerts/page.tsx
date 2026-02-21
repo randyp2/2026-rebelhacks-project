@@ -11,9 +11,13 @@
 //   1. Fetch recent alert rows.
 //   2. Render a table of currently alerted rooms (latest alert per room).
 import { UltraQualityDataTable } from "@/components/ui/ultra-quality-data-table"
-import { getRecentAlerts } from "@/lib/supabase/queries"
+import { getPersonsWithRisk, getRecentAlerts, type PersonWithRiskRow } from "@/lib/supabase/queries"
 import { createServerSupabaseClient } from "@/utils/supabase/server"
 import type { AlertRow } from "@/types/database"
+
+type AlertWithTiedPersons = AlertRow & {
+  tied_person_names: string[]
+}
 
 function normalizeExplanation(explanation: string | null): string | null {
   if (!explanation) return explanation
@@ -26,17 +30,43 @@ function normalizeExplanation(explanation: string | null): string | null {
   return normalized.length > 0 ? normalized : explanation
 }
 
-function normalizeAlert(alert: AlertRow): AlertRow {
+function buildRoomToNames(persons: PersonWithRiskRow[]): Map<string, string[]> {
+  const roomToNamesSet = new Map<string, Set<string>>()
+
+  for (const person of persons) {
+    for (const roomId of person.current_rooms) {
+      if (!roomToNamesSet.has(roomId)) {
+        roomToNamesSet.set(roomId, new Set<string>())
+      }
+      roomToNamesSet.get(roomId)?.add(person.full_name)
+    }
+  }
+
+  const roomToNames = new Map<string, string[]>()
+  for (const [roomId, names] of roomToNamesSet.entries()) {
+    roomToNames.set(roomId, Array.from(names).sort((left, right) => left.localeCompare(right)))
+  }
+
+  return roomToNames
+}
+
+function normalizeAlert(alert: AlertRow, roomToNames: Map<string, string[]>): AlertWithTiedPersons {
   return {
     ...alert,
     explanation: normalizeExplanation(alert.explanation),
+    tied_person_names: alert.room_id ? (roomToNames.get(alert.room_id) ?? []) : [],
   }
 }
 
 export default async function AlertsPage() {
   const supabase = await createServerSupabaseClient()
-  const alerts = await getRecentAlerts(supabase, 500).catch(() => [])
-  const normalizedAlerts = alerts.map(normalizeAlert)
+  const [alerts, persons] = await Promise.all([
+    getRecentAlerts(supabase, 500).catch(() => []),
+    getPersonsWithRisk(supabase).catch(() => []),
+  ])
+
+  const roomToNames = buildRoomToNames(persons)
+  const normalizedAlerts = alerts.map((alert) => normalizeAlert(alert, roomToNames))
 
   return (
     <div className="h-full overflow-auto p-4">

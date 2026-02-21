@@ -15,8 +15,12 @@ import type { AlertRow } from "@/types/database"
 
 type SortableKey = "room_id" | "risk_score" | "timestamp"
 
+type AlertTableRow = AlertRow & {
+  tied_person_names?: string[]
+}
+
 type UltraQualityDataTableProps = {
-  alerts: AlertRow[]
+  alerts: AlertTableRow[]
 }
 
 export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
@@ -33,7 +37,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
 
   const currentRoomAlerts = useMemo(() => {
     // Keep the latest alert per room to represent currently alerted rooms.
-    const latestByRoom = new Map<string, AlertRow>()
+    const latestByRoom = new Map<string, AlertTableRow>()
 
     for (const alert of alerts) {
       const roomKey = alert.room_id ?? `unassigned:${alert.id}`
@@ -58,6 +62,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
     return currentRoomAlerts.filter(
       (alert) =>
         (alert.room_id ?? "").toLowerCase().includes(term) ||
+        (alert.tied_person_names ?? []).some((name) => name.toLowerCase().includes(term)) ||
         (alert.explanation ?? "").toLowerCase().includes(term)
     )
   }, [currentRoomAlerts, search])
@@ -134,7 +139,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
             setSearch(e.target.value)
             setCurrentPage(1)
           }}
-          placeholder="Search by room id or explanation..."
+          placeholder="Search by room id, tied person, or explanation..."
           className="w-full rounded-md border border-white/10 bg-[#0a101b] px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-72"
           aria-label="Search alerted rooms"
         />
@@ -150,17 +155,22 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
               {[
                 { key: "room_id", label: "Room" },
                 { key: "risk_score", label: "Risk Score" },
+                { key: "tied_persons", label: "Tied Persons" },
                 { key: "timestamp", label: "Last Alert" },
               ].map(({ key, label }) => (
                 <th
                   key={key}
                   scope="col"
-                  onClick={() => requestSort(key as SortableKey)}
-                  className="cursor-pointer select-none px-4 py-2 text-left text-sm font-medium text-slate-300"
+                  onClick={key === "tied_persons" ? undefined : () => requestSort(key as SortableKey)}
+                  className={`select-none px-4 py-2 text-left text-sm font-medium text-slate-300 ${
+                    key === "tied_persons" ? "" : "cursor-pointer"
+                  }`}
                 >
                   <span className="inline-flex items-center">
                     {label}
-                    <span className="ml-1 text-xs">{getSortIndicator(key as SortableKey)}</span>
+                    {key !== "tied_persons" && (
+                      <span className="ml-1 text-xs">{getSortIndicator(key as SortableKey)}</span>
+                    )}
                   </span>
                 </th>
               ))}
@@ -173,7 +183,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
           <tbody className="divide-y divide-white/10">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
                   No alerted rooms found.
                 </td>
               </tr>
@@ -189,6 +199,11 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
                     </td>
                     <td className={`whitespace-nowrap px-4 py-3 text-sm font-semibold ${riskColor}`}>
                       {formatRiskScore(alert.risk_score)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-300">
+                      {alert.tied_person_names && alert.tied_person_names.length > 0
+                        ? alert.tied_person_names.join(", ")
+                        : "No linked person"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-400">
                       {new Date(alert.timestamp).toLocaleString()}
