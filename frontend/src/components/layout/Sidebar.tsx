@@ -36,7 +36,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 border-b border-white/8 px-4">
         <Shield className="h-5 w-5 shrink-0 text-blue-400" />
-        <span className="text-sm font-bold tracking-tight text-slate-100">SafeStay AI</span>
+        <span className="text-sm font-bold tracking-tight text-slate-100">HotelGuard</span>
       </div>
 
       {/* Nav links */}
@@ -50,7 +50,7 @@ export default function Sidebar() {
               className={[
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 active
-                  ? "bg-blue-600/15 text-blue-400 font-medium"
+                  ? "text-blue-400 font-medium hover:bg-white/5"
                   : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
               ].join(" ")}
             >
