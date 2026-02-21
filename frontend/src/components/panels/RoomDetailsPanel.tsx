@@ -3,11 +3,11 @@
  * RoomDetailsPanel
  *
  * Slide-in side panel shown when the user clicks a room tile.
- * Displays: risk score + level, floor, last_updated, and up to 10 recent alerts.
+ * Displays: risk score + level, floor, last_updated, tied people, and up to 10 recent alerts.
  */
 
 import { useMemo } from "react"
-import { X, Clock, AlertTriangle } from "lucide-react"
+import { X, Clock, AlertTriangle, Users } from "lucide-react"
 import {
   getRiskLevel,
   getRiskColor,
@@ -19,6 +19,10 @@ import type { AlertRow } from "@/types/database"
 type RoomDetailsPanelProps = {
   room: EnrichedRoom
   alerts: AlertRow[]
+  tiedPeople: {
+    name: string
+    riskLevel: string | null
+  }[]
   onClose: () => void
 }
 
@@ -32,7 +36,23 @@ function timeAgo(ts: string): string {
   return `${Math.floor(h / 24)}d ago`
 }
 
-export default function RoomDetailsPanel({ room, alerts, onClose }: RoomDetailsPanelProps) {
+function normalizeExplanation(explanation: string | null): string | null {
+  if (!explanation) return explanation
+  if (!explanation.includes("Room risk threshold")) return explanation
+
+  const firstPeriodIndex = explanation.indexOf(".")
+  if (firstPeriodIndex === -1) return explanation
+
+  const normalized = explanation.slice(firstPeriodIndex + 1).trim()
+  return normalized.length > 0 ? normalized : explanation
+}
+
+export default function RoomDetailsPanel({
+  room,
+  alerts,
+  tiedPeople,
+  onClose,
+}: RoomDetailsPanelProps) {
   const roomAlerts = useMemo(
     () => alerts.filter((a) => a.room_id === room.room_id).slice(0, 10),
     [alerts, room.room_id]
@@ -40,6 +60,25 @@ export default function RoomDetailsPanel({ room, alerts, onClose }: RoomDetailsP
 
   const level = getRiskLevel(room.risk_score)
   const levelColor = getRiskColor(level)
+  const formatPersonRiskLevel = (riskLevel: string | null): string =>
+    riskLevel ? riskLevel.replace(/_/g, " ").toUpperCase() : "UNKNOWN"
+  const getPersonRiskBadgeClass = (riskLevel: string | null): string => {
+    const normalized = riskLevel?.toUpperCase() ?? ""
+
+    if (normalized === "CRITICAL" || normalized === "VERY_HIGH") {
+      return "text-red-200 bg-red-500/20 border border-red-400/40"
+    }
+    if (normalized === "HIGH") {
+      return "text-orange-200 bg-orange-500/20 border border-orange-400/40"
+    }
+    if (normalized === "MEDIUM") {
+      return "text-amber-200 bg-amber-500/20 border border-amber-400/40"
+    }
+    if (normalized === "LOW") {
+      return "text-emerald-200 bg-emerald-500/20 border border-emerald-400/40"
+    }
+    return "text-slate-200 bg-white/10 border border-white/20"
+  }
 
   return (
     <aside className="flex flex-col rounded-lg border border-white/10 bg-[#0f1623] overflow-hidden">
@@ -91,6 +130,31 @@ export default function RoomDetailsPanel({ room, alerts, onClose }: RoomDetailsP
           </div>
         </div>
 
+        {/* People tied to this room */}
+        {tiedPeople.length > 0 && (
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
+              <Users className="h-3 w-3" />
+              People Tied to Room
+            </p>
+            <ul className="space-y-1.5">
+              {tiedPeople.map((person) => (
+                <li
+                  key={person.name}
+                  className="flex items-center justify-between rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-2"
+                >
+                  <span className="text-sm font-bold text-slate-100">{person.name}</span>
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${getPersonRiskBadgeClass(person.riskLevel)}`}
+                  >
+                    {formatPersonRiskLevel(person.riskLevel)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Alerts for this room */}
         <div>
           <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
@@ -104,6 +168,7 @@ export default function RoomDetailsPanel({ room, alerts, onClose }: RoomDetailsP
               {roomAlerts.map((alert) => {
                 const aLevel = getRiskLevel(alert.risk_score)
                 const aColor = getRiskColor(aLevel)
+                const explanation = normalizeExplanation(alert.explanation)
                 return (
                   <li
                     key={alert.id}
@@ -115,8 +180,8 @@ export default function RoomDetailsPanel({ room, alerts, onClose }: RoomDetailsP
                       </span>
                       <span className="text-slate-500">{timeAgo(alert.timestamp)}</span>
                     </div>
-                    {alert.explanation && (
-                      <p className="text-slate-400 leading-snug">{alert.explanation}</p>
+                    {explanation && (
+                      <p className="text-slate-400 leading-snug">{explanation}</p>
                     )}
                   </li>
                 )
