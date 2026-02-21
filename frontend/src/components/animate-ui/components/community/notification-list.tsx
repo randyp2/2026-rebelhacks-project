@@ -21,6 +21,8 @@ type NotificationItem = {
 }
 
 const MAX_SHOWN_ROOMS = 8
+const COLLAPSED_VISIBLE_ROOMS = 3
+const EXPANSION_INTERVAL_MS = 90
 
 const transition: Transition = {
   type: "spring",
@@ -91,6 +93,7 @@ function toNotificationItems(alerts: AlertRow[], maxItems: number): Notification
 
 function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationListProps) {
   const [isExpanded, setIsExpanded] = React.useState(false)
+  const [visibleCount, setVisibleCount] = React.useState(COLLAPSED_VISIBLE_ROOMS)
   const router = useRouter()
   const maxVisibleRooms = Math.max(0, Math.min(maxItems, MAX_SHOWN_ROOMS))
 
@@ -98,9 +101,35 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
     () => toNotificationItems(alerts, maxVisibleRooms),
     [alerts, maxVisibleRooms]
   )
+
+  React.useEffect(() => {
+    if (!isExpanded) {
+      setVisibleCount(COLLAPSED_VISIBLE_ROOMS)
+      return
+    }
+
+    setVisibleCount((count) =>
+      Math.min(Math.max(count, COLLAPSED_VISIBLE_ROOMS), maxVisibleRooms)
+    )
+
+    if (maxVisibleRooms <= COLLAPSED_VISIBLE_ROOMS) return
+
+    const intervalId = window.setInterval(() => {
+      setVisibleCount((count) => {
+        if (count >= maxVisibleRooms) {
+          window.clearInterval(intervalId)
+          return count
+        }
+        return count + 1
+      })
+    }, EXPANSION_INTERVAL_MS)
+
+    return () => window.clearInterval(intervalId)
+  }, [isExpanded, maxVisibleRooms])
+
   const visibleNotifications = React.useMemo(
-    () => notifications.slice(0, isExpanded ? maxVisibleRooms : 3),
-    [isExpanded, maxVisibleRooms, notifications]
+    () => notifications.slice(0, visibleCount),
+    [notifications, visibleCount]
   )
 
   return (
@@ -124,7 +153,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
           visibleNotifications.map((notification, i) => (
             <motion.div
               key={notification.id}
-              initial={false}
+              initial="collapsed"
               animate={isExpanded ? "expanded" : "collapsed"}
               className="relative rounded-xl border border-white/10 bg-[#172134] px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
               variants={getCardVariants(i)}
