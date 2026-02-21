@@ -7,6 +7,7 @@
 
 import DashboardHeader from "@/components/layout/DashboardHeader"
 import Sidebar from "@/components/layout/Sidebar"
+import DashboardRealtimeToasts from "@/components/dashboard/DashboardRealtimeToasts"
 import { createServerSupabaseClient } from "@/utils/supabase/server"
 
 export default async function DashboardLayout({
@@ -26,6 +27,7 @@ export default async function DashboardLayout({
       <Sidebar userFullName={userFullName} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardHeader />
+        <DashboardRealtimeToasts />
         <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
           {children}
         </div>
