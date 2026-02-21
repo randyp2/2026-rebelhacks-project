@@ -19,27 +19,41 @@ export type Database = {
     Tables: {
       alerts: {
         Row: {
+          alert_type: string
           explanation: string | null
           id: string
+          person_id: string | null
           risk_score: number
-          room_id: string
+          room_id: string | null
           timestamp: string
         }
         Insert: {
+          alert_type?: string
           explanation?: string | null
           id?: string
+          person_id?: string | null
           risk_score: number
-          room_id: string
+          room_id?: string | null
           timestamp?: string
         }
         Update: {
+          alert_type?: string
           explanation?: string | null
           id?: string
+          person_id?: string | null
           risk_score?: number
-          room_id?: string
+          room_id?: string | null
           timestamp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "alerts_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "persons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cv_events: {
         Row: {
@@ -92,29 +106,58 @@ export type Database = {
         }
         Relationships: []
       }
+      person_risk: {
+        Row: {
+          last_updated: string
+          person_id: string
+          risk_level: string
+          risk_score: number
+          score_breakdown: Json
+        }
+        Insert: {
+          last_updated?: string
+          person_id: string
+          risk_level: string
+          risk_score?: number
+          score_breakdown?: Json
+        }
+        Update: {
+          last_updated?: string
+          person_id?: string
+          risk_level?: string
+          risk_score?: number
+          score_breakdown?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_risk_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: true
+            referencedRelation: "persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       person_room_history: {
         Row: {
           id: string
           person_id: string
-          purchase_timestamp: string
           risk_score_at_time: number | null
-          room_id: string
+          room_history: Json
           was_flagged_dangerous: boolean
         }
         Insert: {
           id?: string
           person_id: string
-          purchase_timestamp?: string
           risk_score_at_time?: number | null
-          room_id: string
+          room_history?: Json
           was_flagged_dangerous?: boolean
         }
         Update: {
           id?: string
           person_id?: string
-          purchase_timestamp?: string
           risk_score_at_time?: number | null
-          room_id?: string
+          room_history?: Json
           was_flagged_dangerous?: boolean
         }
         Relationships: [
@@ -129,16 +172,19 @@ export type Database = {
       }
       persons: {
         Row: {
+          card_history: Json
           full_name: string
           id: string
           last_room_purchase_timestamp: string | null
         }
         Insert: {
+          card_history?: Json
           full_name: string
           id?: string
           last_room_purchase_timestamp?: string | null
         }
         Update: {
+          card_history?: Json
           full_name?: string
           id?: string
           last_room_purchase_timestamp?: string | null
@@ -189,7 +235,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      compute_room_risk: {
+        Args: { p_room_id: string; p_window_minutes?: number }
+        Returns: {
+          explanation: string
+          risk_score: number
+          score_breakdown: Json
+        }[]
+      }
+      compute_person_risk: {
+        Args: { p_person_id: string }
+        Returns: {
+          risk_level: string
+          risk_score: number
+          score_breakdown: Json
+          trigger_room_id: string
+        }[]
+      }
+      refresh_person_risk: {
+        Args: never
+        Returns: number
+      }
+      refresh_room_risk: {
+        Args: {
+          p_lookback_hours?: number
+          p_room_ids?: string[] | null
+          p_window_minutes?: number
+        }
+        Returns: number
+      }
+      try_parse_timestamptz: {
+        Args: { p_text: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
@@ -238,6 +316,7 @@ export type AlertRow = Tables<"alerts">
 export type HotelEventRow = Tables<"hotel_events">
 export type CvEventRow = Tables<"cv_events">
 export type PersonRow = Tables<"persons">
+export type PersonRiskRow = Tables<"person_risk">
 export type PersonRoomHistoryRow = Tables<"person_room_history">
 
 // Signal weights as defined in the PRD
