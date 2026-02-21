@@ -109,11 +109,13 @@ const FloorMesh = memo(function FloorMesh({
 			{/* Inner group: animated by useFrame (rotation, z-position) */}
 			<group ref={animRef}>
 				{/* ── Main slab ── */}
-				<mesh
-					onClick={(e) => {
-						e.stopPropagation();
-						onClick();
-					}}
+        <mesh
+          onClick={(e) => {
+            e.stopPropagation();
+            // Ignore drag-end clicks from OrbitControls; only focus on real clicks.
+            if (e.delta > 4) return;
+            onClick();
+          }}
 					onPointerOver={(e) => {
 						e.stopPropagation();
 						setHoveredSlab(true);
