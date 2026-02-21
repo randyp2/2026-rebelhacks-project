@@ -358,7 +358,7 @@ export async function POST(req: Request) {
 	const evidenceEnabled = parseBooleanFlag(process.env.CV_EVIDENCE_ENABLED, true);
 	const evidenceThreshold = Math.min(
 		1,
-		parsePositiveNumber(process.env.CV_EVIDENCE_SUSPICION_THRESHOLD, 0.7),
+		parsePositiveNumber(process.env.CV_EVIDENCE_SUSPICION_THRESHOLD, 0.15),
 	);
 	const evidenceMaxFramesPerRequest = Math.max(
 		1,

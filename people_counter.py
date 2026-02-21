@@ -301,7 +301,7 @@ def launch_uploader_clip(
     next_api_base_url: str,
     start_offset_seconds: float,
     duration_seconds: float,
-) -> int:
+) -> subprocess.Popen:
     env = os.environ.copy()
     env["CAMERA_SOURCE"] = source_video
     env["ROOM_ID"] = room_id
@@ -311,8 +311,29 @@ def launch_uploader_clip(
     env["MAX_DURATION_SECONDS"] = f"{max(0.1, duration_seconds):.3f}"
     env["VIDEO_ID"] = f"vid_entry_{int(time.time())}_{uuid4().hex[:8]}"
 
-    proc = subprocess.run([uploader_python, uploader_script], env=env, check=False)
-    return int(proc.returncode)
+    return subprocess.Popen(
+        [uploader_python, uploader_script],
+        env=env,
+        start_new_session=True,
+    )
+
+
+def reap_finished_uploads(active_uploads: list[dict[str, object]]) -> None:
+    remaining: list[dict[str, object]] = []
+    for job in active_uploads:
+        proc = job.get("proc")
+        trigger = job.get("trigger")
+        if not isinstance(proc, subprocess.Popen):
+            continue
+        rc = proc.poll()
+        if rc is None:
+            remaining.append(job)
+            continue
+        if rc == 0:
+            print(f"[uploader] completed trigger={trigger}")
+        else:
+            print(f"[uploader] failed trigger={trigger} return_code={rc}")
+    active_uploads[:] = remaining
 
 
 def parse_args() -> argparse.Namespace:
@@ -514,7 +535,7 @@ def parse_args() -> argparse.Namespace:
         "--upload-delay-seconds",
         type=float,
         default=10.0,
-        help="Wait this long after high-risk entry before launching uploader",
+        help="Deprecated/ignored: uploader now launches immediately on high-risk entry",
     )
     parser.add_argument(
         "--upload-duration-seconds",
@@ -680,7 +701,8 @@ def main() -> None:
     entered = 0
     left = 0
     uploads_started = 0
-    pending_uploads: list[dict[str, float]] = []
+    next_upload_left_threshold = 2
+    active_uploads: list[dict[str, object]] = []
 
     while True:
         ok, frame = cap.read()
@@ -781,19 +803,37 @@ def main() -> None:
                                         f"threshold={risk.get('risk_threshold')} "
                                         f"is_high_risk={risk.get('is_high_risk')}",
                                     )
-                                    if bool(risk.get("is_high_risk")) and uploads_started + len(pending_uploads) < int(args.max_upload_triggers):
+                                    if (
+                                        bool(risk.get("is_high_risk"))
+                                        and left >= next_upload_left_threshold
+                                        and uploads_started < int(args.max_upload_triggers)
+                                    ):
                                         entry_sec = current_video_seconds(cap, frame_index, fps)
-                                        pending_uploads.append(
-                                            {
-                                                "entry_sec": entry_sec,
-                                                "fire_sec": entry_sec + float(args.upload_delay_seconds),
-                                            }
-                                        )
+                                        clip_duration = max(float(args.upload_duration_seconds), float(entry_sec))
                                         print(
-                                            "[uploader] scheduled "
-                                            f"entry_sec={entry_sec:.2f} fire_sec={entry_sec + float(args.upload_delay_seconds):.2f}",
+                                            "[uploader] launching "
+                                            f"entry_sec={entry_sec:.2f} "
+                                            f"start_sec=0.00 "
+                                            f"duration={clip_duration:.2f}s",
                                         )
-                                except (requests.RequestException, ValueError, RuntimeError) as err:
+                                        rc = launch_uploader_clip(
+                                            uploader_python=str(args.uploader_python),
+                                            uploader_script=str(args.uploader_script),
+                                            source_video=str(args.video),
+                                            room_id=str(args.room_id),
+                                            cv_api_key=str(args.cv_api_key),
+                                            next_api_base_url=str(args.next_api_base_url),
+                                            start_offset_seconds=0.0,
+                                            duration_seconds=clip_duration,
+                                        )
+                                        uploads_started += 1
+                                        next_upload_left_threshold += 2
+                                        active_uploads.append({"trigger": uploads_started, "proc": rc})
+                                        print(
+                                            f"[uploader] started trigger={uploads_started} "
+                                            f"pid={rc.pid}"
+                                        )
+                                except (requests.RequestException, ValueError, RuntimeError, OSError) as err:
                                     print(f"[room-risk] failed room_id={args.room_id}: {err}")
                             elif prev_zone == 1 and curr_zone == -1:
                                 left += 1
@@ -833,19 +873,37 @@ def main() -> None:
                                             f"threshold={risk.get('risk_threshold')} "
                                             f"is_high_risk={risk.get('is_high_risk')}",
                                         )
-                                        if bool(risk.get("is_high_risk")) and uploads_started + len(pending_uploads) < int(args.max_upload_triggers):
+                                        if (
+                                            bool(risk.get("is_high_risk"))
+                                            and left >= next_upload_left_threshold
+                                            and uploads_started < int(args.max_upload_triggers)
+                                        ):
                                             entry_sec = current_video_seconds(cap, frame_index, fps)
-                                            pending_uploads.append(
-                                                {
-                                                    "entry_sec": entry_sec,
-                                                    "fire_sec": entry_sec + float(args.upload_delay_seconds),
-                                                }
-                                            )
+                                            clip_duration = max(float(args.upload_duration_seconds), float(entry_sec))
                                             print(
-                                                "[uploader] scheduled "
-                                                f"entry_sec={entry_sec:.2f} fire_sec={entry_sec + float(args.upload_delay_seconds):.2f}",
+                                                "[uploader] launching "
+                                                f"entry_sec={entry_sec:.2f} "
+                                                f"start_sec=0.00 "
+                                                f"duration={clip_duration:.2f}s",
                                             )
-                                    except (requests.RequestException, ValueError, RuntimeError) as err:
+                                            rc = launch_uploader_clip(
+                                                uploader_python=str(args.uploader_python),
+                                                uploader_script=str(args.uploader_script),
+                                                source_video=str(args.video),
+                                                room_id=str(args.room_id),
+                                                cv_api_key=str(args.cv_api_key),
+                                                next_api_base_url=str(args.next_api_base_url),
+                                                start_offset_seconds=0.0,
+                                                duration_seconds=clip_duration,
+                                            )
+                                            uploads_started += 1
+                                            next_upload_left_threshold += 2
+                                            active_uploads.append({"trigger": uploads_started, "proc": rc})
+                                            print(
+                                                f"[uploader] started trigger={uploads_started} "
+                                                f"pid={rc.pid}"
+                                            )
+                                    except (requests.RequestException, ValueError, RuntimeError, OSError) as err:
                                         print(f"[room-risk] failed room_id={args.room_id}: {err}")
                                 elif direction is not None:
                                     left += 1
@@ -882,35 +940,6 @@ def main() -> None:
             2,
         )
 
-        if pending_uploads and uploads_started < int(args.max_upload_triggers):
-            now_sec = current_video_seconds(cap, frame_index, fps)
-            while (
-                pending_uploads
-                and uploads_started < int(args.max_upload_triggers)
-                and now_sec >= pending_uploads[0]["fire_sec"]
-            ):
-                job = pending_uploads.pop(0)
-                print(
-                    "[uploader] launching "
-                    f"entry_sec={job['entry_sec']:.2f} "
-                    f"duration={float(args.upload_duration_seconds):.2f}s"
-                )
-                rc = launch_uploader_clip(
-                    uploader_python=str(args.uploader_python),
-                    uploader_script=str(args.uploader_script),
-                    source_video=str(args.video),
-                    room_id=str(args.room_id),
-                    cv_api_key=str(args.cv_api_key),
-                    next_api_base_url=str(args.next_api_base_url),
-                    start_offset_seconds=float(job["entry_sec"]),
-                    duration_seconds=float(args.upload_duration_seconds),
-                )
-                uploads_started += 1
-                if rc == 0:
-                    print(f"[uploader] completed trigger={uploads_started}")
-                else:
-                    print(f"[uploader] failed trigger={uploads_started} return_code={rc}")
-
         if args.show:
             show_frame = frame
             if display_scale != 1.0:
@@ -926,6 +955,9 @@ def main() -> None:
         if writer is not None:
             writer.write(frame)
 
+        if active_uploads:
+            reap_finished_uploads(active_uploads)
+
         frame_index += 1
 
         if stride > 1:
@@ -939,6 +971,14 @@ def main() -> None:
     if writer is not None:
         writer.release()
     cv2.destroyAllWindows()
+
+    reap_finished_uploads(active_uploads)
+    if active_uploads:
+        print(
+            "[uploader] still running "
+            f"count={len(active_uploads)} "
+            "(background uploads may finish after people_counter exits)"
+        )
 
     print("Final summary:")
     print(f"  frames={frame_index}")
