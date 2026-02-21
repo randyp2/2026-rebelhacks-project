@@ -1,6 +1,6 @@
 export default function AlertsLoading() {
 	return (
-		<div className="h-full overflow-auto p-4">
+		<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
 			<h1 className="mb-4 text-2xl font-bold">Alerts</h1>
 
 			<div className="rounded-lg border border-border bg-card p-4">

@@ -152,7 +152,7 @@ export async function POST(req: Request) {
 			model,
 			contents: [{ role: "user", parts }],
 			config: { temperature: 0 },
-		})) as { text?: string } & Record<string, unknown>;
+		})) as unknown as { text?: string } & Record<string, unknown>;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		return NextResponse.json(

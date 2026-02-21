@@ -59,6 +59,9 @@ importers:
       three:
         specifier: ^0.183.1
         version: 0.183.1
+      three-stdlib:
+        specifier: ^2.36.1
+        version: 2.36.1(three@0.183.1)
       zod:
         specifier: ^4.3.6
         version: 4.3.6

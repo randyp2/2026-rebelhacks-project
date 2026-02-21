@@ -149,6 +149,147 @@ export type Database = {
         }
         Relationships: []
       }
+      cv_frame_analysis: {
+        Row: {
+          analysis_summary: string
+          anomaly_signals: Json
+          camera_id: string | null
+          confidence: number
+          created_at: string
+          entry_event: boolean
+          event_id: string | null
+          id: string
+          person_count: number
+          room_id: string
+          suspicion_score: number
+          timestamp: string
+          video_id: string
+        }
+        Insert: {
+          analysis_summary?: string
+          anomaly_signals?: Json
+          camera_id?: string | null
+          confidence?: number
+          created_at?: string
+          entry_event?: boolean
+          event_id?: string | null
+          id?: string
+          person_count?: number
+          room_id: string
+          suspicion_score?: number
+          timestamp: string
+          video_id: string
+        }
+        Update: {
+          analysis_summary?: string
+          anomaly_signals?: Json
+          camera_id?: string | null
+          confidence?: number
+          created_at?: string
+          entry_event?: boolean
+          event_id?: string | null
+          id?: string
+          person_count?: number
+          room_id?: string
+          suspicion_score?: number
+          timestamp?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
+      cv_video_summaries: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          frame_count: number
+          key_patterns: Json
+          overall_risk_level: string
+          overall_suspicion_score: number
+          recommended_action: string
+          room_id: string | null
+          started_at: string | null
+          updated_at: string
+          video_id: string
+          video_summary: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          frame_count?: number
+          key_patterns?: Json
+          overall_risk_level: string
+          overall_suspicion_score?: number
+          recommended_action: string
+          room_id?: string | null
+          started_at?: string | null
+          updated_at?: string
+          video_id: string
+          video_summary: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          frame_count?: number
+          key_patterns?: Json
+          overall_risk_level?: string
+          overall_suspicion_score?: number
+          recommended_action?: string
+          room_id?: string | null
+          started_at?: string | null
+          updated_at?: string
+          video_id?: string
+          video_summary?: string
+        }
+        Relationships: []
+      }
+      cv_risk_evidence: {
+        Row: {
+          analysis_summary: string
+          anomaly_signals: Json
+          created_at: string
+          frame_timestamp: string
+          frame_mime_type: string | null
+          frame_image_base64: string | null
+          id: string
+          is_key_frame: boolean
+          room_id: string
+          storage_bucket: string
+          storage_path: string
+          suspicion_score: number
+          video_id: string
+        }
+        Insert: {
+          analysis_summary?: string
+          anomaly_signals?: Json
+          created_at?: string
+          frame_timestamp: string
+          frame_mime_type?: string | null
+          frame_image_base64?: string | null
+          id?: string
+          is_key_frame?: boolean
+          room_id: string
+          storage_bucket?: string
+          storage_path: string
+          suspicion_score?: number
+          video_id: string
+        }
+        Update: {
+          analysis_summary?: string
+          anomaly_signals?: Json
+          created_at?: string
+          frame_timestamp?: string
+          frame_mime_type?: string | null
+          frame_image_base64?: string | null
+          id?: string
+          is_key_frame?: boolean
+          room_id?: string
+          storage_bucket?: string
+          storage_path?: string
+          suspicion_score?: number
+          video_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           connector_id: string
@@ -719,6 +860,8 @@ export type RoomRiskRow = Tables<"room_risk">
 export type AlertRow = Tables<"alerts">
 export type HotelEventRow = Tables<"hotel_events">
 export type CvEventRow = Tables<"cv_events">
+export type CvVideoSummaryRow = Tables<"cv_video_summaries">
+export type CvRiskEvidenceRow = Tables<"cv_risk_evidence">
 export type PersonRow = Tables<"persons">
 export type ProfileRow = Tables<"profiles">
 export type RoomRow = Tables<"rooms">

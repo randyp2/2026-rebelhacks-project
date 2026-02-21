@@ -12,6 +12,8 @@ import type {
   AlertRow,
   HotelEventRow,
   CvEventRow,
+  CvVideoSummaryRow,
+  CvRiskEvidenceRow,
   PersonRow,
   PersonRiskRow,
   PersonRoomHistoryRow,
@@ -160,6 +162,37 @@ export async function getRecentAlerts(
   return [...latestDbAlertByRoom.values(), ...syntheticRiskAlerts, ...unassignedAlerts].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   )
+}
+
+/** Most recent CV video summaries, newest first by update time. */
+export async function getRecentVideoSummaries(
+  client: TypedClient,
+  limit = 25
+): Promise<CvVideoSummaryRow[]> {
+  const { data, error } = await client
+    .from("cv_video_summaries")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data ?? []
+}
+
+/** Most recent key-frame evidence rows, newest first. */
+export async function getRecentRiskEvidence(
+  client: TypedClient,
+  limit = 100
+): Promise<CvRiskEvidenceRow[]> {
+  const { data, error } = await client
+    .from("cv_risk_evidence")
+    .select("*")
+    .eq("is_key_frame", true)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data ?? []
 }
 
 /** Hotel events for a room within the last N minutes, newest first. */

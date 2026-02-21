@@ -11,9 +11,12 @@
 //   1. Fetch recent alert rows.
 //   2. Render a table of currently alerted rooms (latest alert per room).
 import { UltraQualityDataTable } from "@/components/ui/ultra-quality-data-table";
+import VideoAlertsSection from "@/components/dashboard/VideoAlertsSection";
 import {
 	getPersonsWithRisk,
 	getRecentAlerts,
+	getRecentRiskEvidence,
+	getRecentVideoSummaries,
 	type PersonWithRiskRow,
 } from "@/lib/supabase/queries";
 import type { AlertRow } from "@/types/database";
@@ -89,9 +92,11 @@ function normalizeAlert(
 
 export default async function AlertsPage() {
 	const supabase = await createServerSupabaseClient();
-	const [alerts, persons] = await Promise.all([
+	const [alerts, persons, videoSummaries, riskEvidence] = await Promise.all([
 		getRecentAlerts(supabase, 500).catch(() => []),
 		getPersonsWithRisk(supabase).catch(() => []),
+		getRecentVideoSummaries(supabase, 24).catch(() => []),
+		getRecentRiskEvidence(supabase, 120).catch(() => []),
 	]);
 
 	const personIdToName = buildPersonIdToName(persons);
@@ -101,9 +106,15 @@ export default async function AlertsPage() {
 	);
 
 	return (
-		<div className="h-full overflow-auto p-4">
+		<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
 			<h1 className="mb-4 text-2xl font-bold">Alerts</h1>
-			<UltraQualityDataTable alerts={normalizedAlerts} />
+			<div className="space-y-6">
+				<UltraQualityDataTable alerts={normalizedAlerts} />
+				<VideoAlertsSection
+					initialSummaries={videoSummaries}
+					initialEvidence={riskEvidence}
+				/>
+			</div>
 		</div>
 	);
 }

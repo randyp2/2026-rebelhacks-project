@@ -22,7 +22,7 @@ export default async function DashboardLayout({
     (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="fixed inset-0 flex overflow-hidden bg-background text-foreground">
       <Sidebar userFullName={userFullName} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardHeader />
