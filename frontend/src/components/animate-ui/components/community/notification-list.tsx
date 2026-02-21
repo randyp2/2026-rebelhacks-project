@@ -146,7 +146,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
 
   return (
     <motion.div
-      className="w-full space-y-3 rounded-2xl border border-border bg-card p-3 shadow-md"
+      className="w-full space-y-3 rounded-2xl border border-border bg-background p-3 shadow-md"
       initial="collapsed"
       whileHover="expanded"
       onHoverStart={() => setIsExpanded(true)}
@@ -167,7 +167,7 @@ function NotificationList({ alerts, maxItems = MAX_SHOWN_ROOMS }: NotificationLi
               key={notification.id}
               initial="collapsed"
               animate={isExpanded ? "expanded" : "collapsed"}
-              className="relative rounded-xl border border-border bg-accent px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
+              className="relative rounded-xl border border-border bg-background px-4 py-2 shadow-sm transition-shadow duration-200 hover:shadow-lg"
               variants={getCardVariants(i)}
               transition={transition}
               style={{

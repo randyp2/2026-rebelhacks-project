@@ -7,7 +7,7 @@ export default async function PersonsPage() {
 	const persons = await getPersonsWithRisk(supabase).catch(() => []);
 
 	return (
-		<div className="h-full overflow-auto p-4">
+		<div className="h-full overflow-auto bg-background p-4">
 			<h1 className="mb-4 text-2xl font-bold">Persons</h1>
 			<UltraQualityPersonsDataTable persons={persons} />
 		</div>

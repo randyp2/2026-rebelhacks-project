@@ -130,7 +130,7 @@ export function UltraQualityDataTable({ alerts }: UltraQualityDataTableProps) {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-background p-4">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"

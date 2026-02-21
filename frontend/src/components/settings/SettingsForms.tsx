@@ -45,7 +45,7 @@ export default function SettingsForms({
 
 	return (
 		<div className="grid w-full max-w-3xl gap-4">
-			<Card className="border-border bg-accent/40 text-foreground">
+			<Card className="border-border bg-background text-foreground">
 				<CardHeader>
 					<CardTitle>Hotel</CardTitle>
 					<CardDescription className="text-muted-foreground">
@@ -54,7 +54,7 @@ export default function SettingsForms({
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<form action={updateHotelSettings} className="space-y-3">
-						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+						<div className="rounded-md border border-border bg-background px-3 py-3">
 							<Label htmlFor="hotel_name" className="text-xs text-muted-foreground">
 								Hotel Name
 							</Label>
@@ -70,7 +70,7 @@ export default function SettingsForms({
 							/>
 						</div>
 
-						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+						<div className="rounded-md border border-border bg-background px-3 py-3">
 							<div className="text-xs text-muted-foreground">Role</div>
 							<div className="mt-2 text-sm text-foreground">
 								{membershipRole ?? "N/A"}
@@ -88,13 +88,13 @@ export default function SettingsForms({
 				</CardContent>
 			</Card>
 
-			<Card className="border-border bg-accent/40 text-foreground">
+			<Card className="border-border bg-background text-foreground">
 				<CardHeader>
 					<CardTitle>Account</CardTitle>
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<form action={updateAccountSettings} className="space-y-3">
-						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+						<div className="rounded-md border border-border bg-background px-3 py-3">
 							<Label htmlFor="full_name" className="text-xs text-muted-foreground">
 								Name
 							</Label>
@@ -108,7 +108,7 @@ export default function SettingsForms({
 								required
 							/>
 						</div>
-						<div className="rounded-md border border-border bg-accent/40 px-3 py-3">
+						<div className="rounded-md border border-border bg-background px-3 py-3">
 							<Label htmlFor="email" className="text-xs text-muted-foreground">
 								Email
 							</Label>
