@@ -40,6 +40,7 @@ const GRID_COLS = 10;
 const TILE_Y = SLAB_H / 2 + 0.04; // sits just above the top face
 const TILE_W = (SLAB_W / GRID_COLS) * 0.88;
 const NEUTRAL_SLAB_COLOR = new THREE.Color("#334155");
+const NO_RAYCAST: THREE.Object3D["raycast"] = () => null;
 
 const FloorMesh = memo(function FloorMesh({
 	yPosition,
@@ -50,6 +51,8 @@ const FloorMesh = memo(function FloorMesh({
 	onRoomSelect,
 }: FloorMeshProps) {
 	const isFocusedFloor = isSelected && hasSelection;
+	const canInteractWithRooms = isSelected && hasSelection;
+	const canInteractWithSlab = !hasSelection || isSelected;
 	// animRef targets the inner group so the outer group can hold the static y-position
 	const animRef = useRef<THREE.Group>(null);
 	const slabMatRef = useRef<THREE.MeshStandardMaterial>(null);
@@ -111,32 +114,45 @@ const FloorMesh = memo(function FloorMesh({
 		<group position={[0, yPosition, 0]}>
 			{/* Inner group: animated by useFrame (rotation, z-position) */}
 			<group ref={animRef}>
-				{/* ── Main slab ── */}
-				<mesh
-					onClick={(e) => {
-						e.stopPropagation();
-						if (isFocusedFloor) return;
-						// Ignore drag-end clicks from OrbitControls; only focus on real clicks.
-						if (e.delta > 4) return;
-						onClick();
-					}}
-					onPointerOver={(e) => {
-						if (isFocusedFloor) {
-							document.body.style.cursor = "default";
-							return;
+					{/* ── Main slab ── */}
+					<mesh
+						raycast={canInteractWithSlab ? undefined : NO_RAYCAST}
+						onClick={
+							canInteractWithSlab
+								? (e) => {
+										e.stopPropagation();
+										if (isFocusedFloor) return;
+										// Ignore drag-end clicks from OrbitControls; only focus on real clicks.
+										if (e.delta > 4) return;
+										onClick();
+									}
+								: undefined
 						}
-						e.stopPropagation();
-						setHoveredSlab(true);
-						document.body.style.cursor = "pointer";
-					}}
-					onPointerOut={() => {
-						setHoveredSlab(false);
-						document.body.style.cursor = isFocusedFloor ? "pointer" : "default";
-					}}
-				>
-					<boxGeometry args={[SLAB_W, SLAB_H, SLAB_D]} />
-					<meshStandardMaterial
-						ref={slabMatRef}
+						onPointerOver={
+							canInteractWithSlab
+								? (e) => {
+										if (isFocusedFloor) {
+											document.body.style.cursor = "default";
+											return;
+										}
+										e.stopPropagation();
+										setHoveredSlab(true);
+										document.body.style.cursor = "pointer";
+									}
+								: undefined
+						}
+						onPointerOut={
+							canInteractWithSlab
+								? () => {
+										setHoveredSlab(false);
+										document.body.style.cursor = isFocusedFloor ? "pointer" : "default";
+									}
+								: undefined
+						}
+					>
+						<boxGeometry args={[SLAB_W, SLAB_H, SLAB_D]} />
+						<meshStandardMaterial
+							ref={slabMatRef}
 						color={NEUTRAL_SLAB_COLOR}
 						emissive={NEUTRAL_SLAB_COLOR}
 						emissiveIntensity={
@@ -150,65 +166,65 @@ const FloorMesh = memo(function FloorMesh({
 				</mesh>
 
 				{/* ── Room heatmap tiles on top face ── */}
-				{roomSlots.map((room, idx) => {
-					const col = idx % GRID_COLS;
-					const row = Math.floor(idx / GRID_COLS);
-					const x = ((col + 0.5) / GRID_COLS - 0.5) * SLAB_W;
-					const z = ((row + 0.5) / GRID_ROWS - 0.5) * SLAB_D;
-					const tileColor = room
-						? new THREE.Color(getRiskHexColor(room.risk_score))
-						: new THREE.Color("#1e293b");
-					const isHovered = room !== null && hoveredRoomId === room.room_id;
+				{canInteractWithRooms &&
+					roomSlots.map((room, idx) => {
+						const col = idx % GRID_COLS;
+						const row = Math.floor(idx / GRID_COLS);
+						const x = ((col + 0.5) / GRID_COLS - 0.5) * SLAB_W;
+						const z = ((row + 0.5) / GRID_ROWS - 0.5) * SLAB_D;
+						const tileColor = room
+							? new THREE.Color(getRiskHexColor(room.risk_score))
+							: new THREE.Color("#1e293b");
+						const isHovered = room !== null && hoveredRoomId === room.room_id;
 
-					return (
-						<group key={idx}>
-							<mesh
-								position={[x, TILE_Y, z]}
-								onClick={(e) => {
-									e.stopPropagation();
-									if (room) onRoomSelect(room.room_id);
-								}}
-								onPointerOver={(e) => {
-									e.stopPropagation();
-									if (room) {
-										setHoveredRoomId(room.room_id);
-										document.body.style.cursor = "pointer";
-									}
-								}}
-								onPointerOut={() => {
-									setHoveredRoomId(null);
-									document.body.style.cursor = isFocusedFloor
-										? "pointer"
-										: "default";
-								}}
-							>
-								<boxGeometry args={[TILE_W, 0.08, TILE_D]} />
-								<meshStandardMaterial
-									ref={(mat) => {
-										if (mat) tileMatsRef.current[idx] = mat;
+						return (
+							<group key={idx}>
+								<mesh
+									position={[x, TILE_Y, z]}
+									onClick={(e) => {
+										e.stopPropagation();
+										if (room) onRoomSelect(room.room_id);
 									}}
-									color={tileColor}
-									emissive={tileColor}
-									emissiveIntensity={isHovered ? 0.6 : 0.15}
-									transparent
-									opacity={0}
-								/>
-							</mesh>
-							{room && (!hasSelection || isSelected) && (
-								<Billboard position={[x, TILE_Y + 0.14, z]} follow>
-									<Text
-										fontSize={0.16}
-										color="white"
-										anchorX="center"
-										anchorY="middle"
-									>
-										{room.room_id}
-									</Text>
-								</Billboard>
-							)}
-						</group>
-					);
-				})}
+									onPointerOver={(e) => {
+										e.stopPropagation();
+										if (room) {
+											setHoveredRoomId(room.room_id);
+											document.body.style.cursor = "pointer";
+										}
+									}}
+									onPointerOut={() => {
+										setHoveredRoomId(null);
+										document.body.style.cursor = "pointer";
+									}}
+								>
+									<boxGeometry args={[TILE_W, 0.08, TILE_D]} />
+									<meshStandardMaterial
+										ref={(mat) => {
+											if (mat) tileMatsRef.current[idx] = mat;
+										}}
+										color={tileColor}
+										emissive={tileColor}
+										emissiveIntensity={isHovered ? 0.6 : 0.15}
+										transparent
+										opacity={0}
+									/>
+								</mesh>
+								{room && (
+									<Billboard position={[x, TILE_Y + 0.14, z]} follow>
+										<Text
+											raycast={NO_RAYCAST}
+											fontSize={0.16}
+											color="white"
+											anchorX="center"
+											anchorY="middle"
+										>
+											{room.room_id}
+										</Text>
+									</Billboard>
+								)}
+							</group>
+						);
+					})}
 			</group>
 		</group>
 	);
