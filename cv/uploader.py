@@ -184,8 +184,10 @@ def log_batch_response(
         print(f"gemini_recommended_action={action}")
 
     errors = payload.get("errors")
-    if isinstance(errors, list) and errors:
-        print(f"errors={errors}")
+    if isinstance(errors, list):
+        visible = [e for e in errors if not str(e).startswith("score-risk invoke")]
+        if visible:
+            print(f"errors={visible}")
 
     return payload if isinstance(payload, dict) else None
 
