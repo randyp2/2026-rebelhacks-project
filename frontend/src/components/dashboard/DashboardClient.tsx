@@ -17,19 +17,16 @@
  *   └──────────────────────────────────┴──────────────────┘
  */
 
-import dynamic from "next/dynamic"
-import { useCallback, useMemo, useState } from "react"
-
-import FloorHeatmap from "@/components/heatmap/FloorHeatmap"
-import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel"
-import { NotificationList } from "@/components/animate-ui/components/community/notification-list"
-import Spinner from "../ui/spinner"
-
-import { useRoomRisk } from "@/hooks/useRoomRisk"
-import { useAlerts } from "@/hooks/useAlerts"
-
-import type { EnrichedRoom } from "@/hooks/useRoomRisk"
-import type { AlertRow, RoomRiskRow } from "@/types/database"
+import dynamic from "next/dynamic";
+import { useCallback, useMemo, useState } from "react";
+import { NotificationList } from "@/components/animate-ui/components/community/notification-list";
+import FloorHeatmap from "@/components/heatmap/FloorHeatmap";
+import RoomDetailsPanel from "@/components/panels/RoomDetailsPanel";
+import { useAlerts } from "@/hooks/useAlerts";
+import type { EnrichedRoom } from "@/hooks/useRoomRisk";
+import { useRoomRisk } from "@/hooks/useRoomRisk";
+import type { AlertRow, RoomRiskRow } from "@/types/database";
+import Spinner from "../ui/spinner";
 
 // Lazy-load the Canvas so Three.js is never bundled into the server render
 const Building3D = dynamic(() => import("@/components/building/Building3D"), {
@@ -46,7 +43,9 @@ function AlertFeedFallback() {
 	return (
 		<div className="flex h-full flex-col">
 			<div className="mb-3 flex shrink-0 items-center justify-between">
-				<span className="text-sm font-semibold text-slate-200">Live Alerts</span>
+				<span className="text-sm font-semibold text-slate-200">
+					Live Alerts
+				</span>
 				<span className="text-[10px] uppercase tracking-wider text-slate-500">
 					Loading...
 				</span>
@@ -115,7 +114,7 @@ export default function DashboardClient({
 		<div className="flex min-h-0 flex-1 gap-4 p-4">
 			{/* ── Left column: 3D view ── */}
 			<div className="flex min-w-0 flex-1 flex-col gap-4">
-				<div className="rounded-lg border border-red-500/10 overflow-hidden h-[820px]">
+				<div className="rounded-lg border border-primary/10 overflow-hidden h-[820px]">
 					<div className="flex items-center gap-2 border-b border-white/10 px-4 py-2.5">
 						<span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
 							Building Overview
@@ -174,11 +173,11 @@ export default function DashboardClient({
 					/>
 				)}
 
-        {/* Alert list — always visible */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <NotificationList alerts={alerts} />
-        </div>
-      </div>
-    </div>
-  )
+				{/* Alert list — always visible */}
+				<div className="flex min-h-0 flex-1 flex-col">
+					<NotificationList alerts={alerts} />
+				</div>
+			</div>
+		</div>
+	);
 }
